@@ -29,11 +29,8 @@
 
 <script>
 import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText } from '@ionic/vue';
-
 import { ref } from "vue";
-/*
-  import { auth, signInWithEmailAndPassword } from "@/firebase/firebaseConfig"; // Asegúrate de que la ruta sea correcta  
-*/
+import { loginUser } from "@/services/authService"; // Importamos la función del servicio
 import { useRouter } from "vue-router";
 
 export default {
@@ -52,23 +49,22 @@ export default {
     const errorMessage = ref("");
 
     const login = async () => {
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
-        console.log("Usuario autenticado:", userCredential.user);
+      const response = await loginUser(email.value, password.value);
+      
+      if (response.success) {
+        console.log("Usuario autenticado:", response.user);
         router.push("/home"); // Redirige a la página principal
-      } catch (error) {
+      } else {
         errorMessage.value = "Error al iniciar sesión. Verifica tus credenciales.";
-        console.error("Error de autenticación:", error.message);
+        console.error("Error de autenticación:", response.message);
       }
     };
 
     const goToRegister = () => {
       router.push("/register");
-
     };
 
     return { email, password, login, errorMessage, goToRegister };
-
   }
 };
 </script>
