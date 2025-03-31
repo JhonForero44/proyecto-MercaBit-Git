@@ -1,11 +1,9 @@
 <template>
   <ion-app>
     <ion-router-outlet />
-    <Footer />
   </ion-app>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { IonApp, IonRouterOutlet } from '@ionic/vue';
-import Footer from './components/Footer.vue';
 </script>
