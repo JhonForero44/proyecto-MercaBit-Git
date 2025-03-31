@@ -1,0 +1,7 @@
+{
+  "name": "proyecto-MercaBit-Git",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
