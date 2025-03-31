@@ -2,7 +2,7 @@
   <ion-menu content-id="main-content" side="start" :disabled="false">
     <ion-content class="menu-content">
       <div class="menu-header">
-        <img src="/public/img/Logo.png" alt="Logo" class="company-logo" />
+        <img src="/img/Logo.png" alt="Logo" class="company-logo" />
         <h2 class="logo">Merca<span class="highlight">Bit</span></h2>
       </div>
       <ion-list>
@@ -44,7 +44,7 @@
 
       <!-- Sección de usuario -->
       <div class="user-section">
-        <img src="/public/img/User.jpg" alt="Usuario" class="user-avatar" />
+        <img src="/img/User.jpg" alt="Usuario" class="user-avatar" />
         <p class="user-name">Samuel</p>
       </div>
       <ion-button class="logout-button" fill="outline">

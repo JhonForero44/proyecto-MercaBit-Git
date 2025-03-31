@@ -1,6 +1,12 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 
 const routes = [
+  /*
+  {
+    path: '/',
+    redirect: '/login'
+  }// Redirigir a login por defecto
+  */
   {
     path: '/',
     redirect: '/home'
@@ -12,6 +18,14 @@ const routes = [
       {
         path: 'home',
         component: () => import('@/views/HomePage.vue'),
+      },
+      {
+        path: '/login',
+        component: () => import('@/views/Login.vue'),
+      },
+      {
+        path: '/registro',
+        component: () => import('@/views/Registro.vue'),
       },
       /*
       {
