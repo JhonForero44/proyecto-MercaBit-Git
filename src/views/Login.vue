@@ -50,7 +50,7 @@ export default {
 
     const login = async () => {
       const response = await loginUser(email.value, password.value);
-      
+
       if (response.success) {
         console.log("Usuario autenticado:", response.user);
         router.push("/home"); // Redirige a la página principal
@@ -124,7 +124,8 @@ ion-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 10px auto; /* Centra el botón */
+  margin: 10px auto;
+  /* Centra el botón */
 }
 
 .DesignButton-Register {
@@ -159,7 +160,7 @@ ion-button {
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-.error-message{
+.error-message {
   color: #000000;
 }
 

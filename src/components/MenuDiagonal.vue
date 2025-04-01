@@ -47,12 +47,12 @@
         <img src="/img/User.jpg" alt="Usuario" class="user-avatar" />
         <p class="user-name">Samuel</p>
       </div>
-      <ion-button class="logout-button" fill="outline">
+
+      <!-- Botón de cerrar sesión -->
+      <ion-button @click="logout" class="logout-button" fill="outline">
         <ion-icon :icon="logOutOutline" slot-v="start"></ion-icon>
         Cerrar sesión
       </ion-button>
-
-
     </ion-content>
   </ion-menu>
 </template>
@@ -60,6 +60,21 @@
 <script setup>
 import { IonMenu, IonContent, IonList, IonMenuToggle, IonItem, IonIcon, IonLabel, IonButton } from '@ionic/vue';
 import { homeOutline, searchOutline, notificationsOutline, cartOutline, checkmarkCircleOutline, folderOutline, personOutline, informationCircleOutline, logOutOutline } from 'ionicons/icons';
+import { logoutUser } from '@/services/authService'; // Importa la función de logout
+import { useRouter } from 'vue-router'; // Importa useRouter para redirigir
+
+const router = useRouter(); // Instancia de router
+
+// Método para cerrar sesión
+const logout = async () => {
+  const result = await logoutUser(); // Llama a la función logout del servicio
+  if (result.success) {
+    window.location.href = '/login'; // Redirige con recarga completa
+  } else {
+    console.error('Error al cerrar sesión:', result.message); // Maneja errores si es necesario
+  }
+};
+
 </script>
 
 <style scoped>
@@ -122,13 +137,16 @@ ion-item {
 ion-icon {
   color: white;
 }
+
 .user-section {
   text-align: center;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra horizontalmente */
-  justify-content: center; /* Centra verticalmente si es necesario */
+  align-items: center;
+  /* Centra horizontalmente */
+  justify-content: center;
+  /* Centra verticalmente si es necesario */
   width: 100%;
 }
 
@@ -165,12 +183,12 @@ ion-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 10px auto; /* Centra el botón horizontalmente */
+  margin: 10px auto;
+  /* Centra el botón horizontalmente */
 }
 
 .logout-button ion-icon {
   font-size: 1.2rem;
   margin-right: 8px;
 }
-
 </style>
