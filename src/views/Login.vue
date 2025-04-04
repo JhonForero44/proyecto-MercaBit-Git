@@ -53,15 +53,19 @@ export default {
 
       if (response.success) {
         console.log("Usuario autenticado:", response.user);
-        router.push("/home"); // Redirige a la página principal
+        router.push("/home");
       } else {
-        errorMessage.value = "Error al iniciar sesión. Verifica tus credenciales.";
+        if (response.resend) {
+          errorMessage.value = response.message;
+        } else {
+          errorMessage.value = "Error al iniciar sesión. Verifica tus credenciales.";
+        }
         console.error("Error de autenticación:", response.message);
       }
     };
 
     const goToRegister = () => {
-      router.push("/register");
+      router.push("/registro");
     };
 
     return { email, password, login, errorMessage, goToRegister };
