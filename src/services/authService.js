@@ -1,38 +1,76 @@
 // src/services/authService.js
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import {app} from "@/firebase/FirebaseConfig"; // Importa tu configuración existente
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from "firebase/auth";
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, setLogLevel } from "firebase/firestore";
+import { app } from "@/firebase/FirebaseConfig"; // Importa tu configuración de Firebase
 
+// Inicializamos servicios
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Función para registrar usuario
-export const registerUser = async (name, cedula, userType, email, password) => {
+// ACTIVA LOGS DETALLADOS EN CONSOLA 
+setLogLevel("debug");
+
+// Función para registrar un nuevo usuario
+export const registerUser = async (name, cedula, email, password) => {
   try {
+    if (!name || !cedula || !email || !password) {
+      return { success: false, message: "Por favor completa todos los campos" };
+    }
+
+    console.log("Datos enviados a Firebase:", { name, cedula, email });
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Guardar datos adicionales en Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      name,
-      cedula,
-      userType,
-      email
+    // Esperar a que Firebase lo reconozca como autenticado
+    await user.getIdToken(true);
+    console.log("Usuario creado con UID:", user.uid);
+
+    const userDocRef = doc(db, "users", user.uid);
+    await setDoc(userDocRef, {
+      name: String(name),
+      cedula: String(cedula),
+      email: String(email),
+      createdAt: new Date(),
+      lastLogin: new Date(),
     });
 
-    return { success: true, user };
+    // Enviar correo de verificación
+    await sendEmailVerification(user);
+
+    return {
+      success: true,
+      message: "Registro exitoso. Revisa tu correo y verifica tu cuenta antes de iniciar sesión.",
+    };
+
   } catch (error) {
+    console.error("🔥 Error en registerUser:", error);
     return { success: false, message: error.message };
   }
 };
-
-// Función para iniciar sesión
+// Funcion para verificar el correo electrónico y Login
 export const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return { success: true, user: userCredential.user };
+    const user = userCredential.user;
+
+    const isAdmin = email === "admin@mercabit.com"; // <-- Tu correo de administrador
+
+    if (!user.emailVerified && !isAdmin) {
+      return {
+        success: false,
+        resend: true,
+        message: "Tu correo no está verificado. Por favor revisa tu bandeja de entrada.",
+      };
+    }
+
+    return { success: true, user };
   } catch (error) {
-    return { success: false, message: error.message };
+    console.error("🔥 Error al iniciar sesión:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
   }
 };
 
