@@ -16,7 +16,11 @@ const routes = [
     component: () => import('@/views/Registro.vue'),
   },
   {
-    path: '/',
+    path: '/recuperar-contrasena',
+    component: () => import('@/views/RecuperarContraseña.vue'),
+  },
+  {
+    path: '/app',
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
       {
