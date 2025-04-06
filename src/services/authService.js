@@ -1,8 +1,7 @@
 // src/services/authService.js
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, setLogLevel } from "firebase/firestore";
 import { app } from "@/firebase/FirebaseConfig"; // Importa tu configuración de Firebase
-
 // Inicializamos servicios
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -48,6 +47,7 @@ export const registerUser = async (name, cedula, email, password) => {
     return { success: false, message: error.message };
   }
 };
+
 // Funcion para verificar el correo electrónico y Login
 export const loginUser = async (email, password) => {
   try {
@@ -71,6 +71,19 @@ export const loginUser = async (email, password) => {
       success: false,
       message: error.message,
     };
+  }
+};
+
+//Funcion para actualizar contraseña
+export const resetPassword = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return {
+      success: true, message: "Si existe una cuenta asociada a este correo, recibirás un enlace para restablecer tu contraseña."
+    };
+  } catch (error) {
+    console.error("Error al enviar el correo de recuperación:", error);
+    return { success: false, message: error.message };
   }
 };
 
