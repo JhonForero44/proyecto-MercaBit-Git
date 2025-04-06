@@ -15,7 +15,9 @@
         <ion-button class="DesignButton-Ingresar" @click="login">Ingresar</ion-button>
 
         <ion-text color="primary">
-          <p style="text-decoration: underline;">Olvidé mi contraseña</p>
+          <p  style="text-decoration: underline; cursor: pointer;" @click="goToRecuperarContraseña">
+            Olvidé mi contraseña
+          </p>
         </ion-text>
 
         <p class="register-text">¿No tienes una cuenta?</p>
@@ -68,7 +70,11 @@ export default {
       router.push("/registro");
     };
 
-    return { email, password, login, errorMessage, goToRegister };
+    const goToRecuperarContraseña = () => {
+      router.push("/recuperar-contrasena");
+    };
+
+    return { email, password, login, errorMessage, goToRegister, goToRecuperarContraseña };
   }
 };
 </script>
