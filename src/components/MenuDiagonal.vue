@@ -44,8 +44,8 @@
 
       <!-- Sección de usuario -->
       <div class="user-section">
-        <img src="/img/User.jpg" alt="Usuario" class="user-avatar" />
-        <p class="user-name">Samuel</p>
+        <img :src="userPhoto" alt="Usuario" class="user-avatar" />
+        <p class="user-name">{{ userName }}</p>
       </div>
 
       <!-- Botón de cerrar sesión -->
@@ -58,24 +58,74 @@
 </template>
 
 <script setup>
-import { IonMenu, IonContent, IonList, IonMenuToggle, IonItem, IonIcon, IonLabel, IonButton } from '@ionic/vue';
-import { homeOutline, searchOutline, notificationsOutline, cartOutline, checkmarkCircleOutline, folderOutline, personOutline, informationCircleOutline, logOutOutline } from 'ionicons/icons';
-import { logoutUser } from '@/services/authService'; // Importa la función de logout
-import { useRouter } from 'vue-router'; // Importa useRouter para redirigir
+import {
+  IonMenu,
+  IonContent,
+  IonList,
+  IonMenuToggle,
+  IonItem,
+  IonIcon,
+  IonLabel,
+  IonButton
+} from '@ionic/vue';
+import {
+  homeOutline,
+  searchOutline,
+  notificationsOutline,
+  cartOutline,
+  checkmarkCircleOutline,
+  folderOutline,
+  personOutline,
+  informationCircleOutline,
+  logOutOutline
+} from 'ionicons/icons';
+import { logoutUser } from '@/services/authService';
+import { useRouter } from 'vue-router';
 
-const router = useRouter(); // Instancia de router
+import { ref, onMounted } from 'vue';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-// Método para cerrar sesión
-const logout = async () => {
-  const result = await logoutUser(); // Llama a la función logout del servicio
-  if (result.success) {
-    window.location.href = '/login'; // Redirige con recarga completa
-  } else {
-    console.error('Error al cerrar sesión:', result.message); // Maneja errores si es necesario
+const router = useRouter();
+const userName = ref('Usuario');
+const userPhoto = ref('/img/User.jpg'); // Default photo
+
+const fetchUserData = async (uid) => {
+  try {
+    const db = getFirestore();
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      userName.value = data.name;
+      if (data.photoURL) {
+        userPhoto.value = data.photoURL;
+      }
+    }
+  } catch (err) {
+    console.error('Error al obtener datos del usuario:', err);
   }
 };
 
+onMounted(() => {
+  const auth = getAuth();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      fetchUserData(user.uid);
+    }
+  });
+});
+
+const logout = async () => {
+  const result = await logoutUser();
+  if (result.success) {
+    window.location.href = '/login';
+  } else {
+    console.error('Error al cerrar sesión:', result.message);
+  }
+};
 </script>
+
 
 <style scoped>
 .menu-content {
