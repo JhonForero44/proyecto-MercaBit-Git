@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 const routes = [
   {
-    path: '/',
+    path: '',
     redirect: '/login'
   },
   {
