@@ -20,7 +20,7 @@ const routes = [
     component: () => import('@/views/RecuperarContraseña.vue'),
   },
   {
-    path: '/app',
+    path: '',
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
       {
