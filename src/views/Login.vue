@@ -11,15 +11,15 @@
         <ion-input class="custom-input" v-model="email" placeholder="Correo electrónico" type="email"
           fill="outline"></ion-input>
         <ion-input class="custom-input" v-model="password" placeholder="Ingresa tu contraseña" type="password"
-          fill="outline"></ion-input>
+          fill="outline">
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
         <ion-button class="DesignButton-Ingresar" @click="login">Ingresar</ion-button>
-
         <ion-text color="primary">
-          <p  style="text-decoration: underline; cursor: pointer;" @click="goToRecuperarContraseña">
+          <p style="text-decoration: underline; cursor: pointer;" @click="goToRecuperarContraseña">
             Olvidé mi contraseña
           </p>
         </ion-text>
-
         <p class="register-text">¿No tienes una cuenta?</p>
         <ion-button class="DesignButton-Register" @click="goToRegister">Crea una Cuenta</ion-button>
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText } from '@ionic/vue';
+import { IonPage, IonContent, IonCard, IonInput, IonInputPasswordToggle, IonButton, IonText } from '@ionic/vue';
 import { ref } from "vue";
 import { loginUser } from "@/services/authService"; // Importamos la función del servicio
 import { useRouter } from "vue-router";
