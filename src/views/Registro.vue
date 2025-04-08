@@ -9,12 +9,16 @@
       </div>
       <ion-card class="register-card">
         <p>Registro. Crea tu cuenta MercaBit</p>
-        
+
         <ion-input class="custom-input" v-model="name" placeholder="Nombre" fill="outline"></ion-input>
         <ion-input class="custom-input" v-model="cedula" placeholder="Cédula" fill="outline"></ion-input>
-        <ion-input class="custom-input" v-model="email" placeholder="Correo electrónico" type="email" fill="outline"></ion-input>
-        <ion-input class="custom-input" v-model="password" placeholder="Ingresa una contraseña segura" type="password" fill="outline"></ion-input>
-        
+        <ion-input class="custom-input" v-model="email" placeholder="Correo electrónico" type="email"
+          fill="outline"></ion-input>
+        <ion-input class="custom-input" v-model="password" placeholder="Ingresa una contraseña segura" type="password"
+          fill="outline">
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+
         <ion-button class="DesignButton-Register" @click="register" :disabled="loading">
           <span v-if="!loading">Crear cuenta</span>
           <ion-spinner v-else name="crescent"></ion-spinner>
@@ -38,7 +42,7 @@
 </template>
 
 <script>
-import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText, IonSpinner } from '@ionic/vue';
+import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText, IonSpinner, IonInputPasswordToggle } from '@ionic/vue';
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { registerUser } from "@/services/authService";
