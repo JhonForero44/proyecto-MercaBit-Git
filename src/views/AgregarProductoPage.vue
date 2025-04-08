@@ -1,522 +1,347 @@
 <!-- AgregarProductoPage.vue -->
 <template>
-    <div class="agregar-producto-container">
-      <div class="header">
-        <h1>Crear Nueva Subasta</h1>
-        <p>Complete todos los campos para publicar su producto</p>
-      </div>
-  
-      <div class="form-container">
-        <form @submit.prevent="crearSubasta" class="subasta-form">
-          <!-- Título del producto -->
-          <div class="form-group">
-            <label for="titulo">Título del producto*</label>
-            <input 
-              id="titulo" 
-              v-model="subasta.titulo" 
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button />
+        </ion-buttons>
+        <ion-title>Crear Productos</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <div class="crear-producto-container">
+        <form @submit.prevent="crearProducto">
+          <ion-item>
+            <ion-label position="stacked">Nombre</ion-label>
+            <ion-input 
+              v-model="producto.nombre" 
               type="text" 
-              required 
-              placeholder="Ej: iPhone 12 Pro Max 256GB"
-              maxlength="100"
+              required
+              placeholder="Ingrese el nombre del producto"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Categoría</ion-label>
+            <ion-select 
+              v-model="producto.categoria" 
+              placeholder="Seleccione una categoría"
+              interface="action-sheet"
+              required
             >
-            <small>Nombre descriptivo del artículo (máx. 100 caracteres)</small>
-          </div>
-          
-          <!-- Categoría -->
-          <div class="form-group">
-            <label for="categoria">Categoría*</label>
-            <select id="categoria" v-model="subasta.categoria" required>
-              <option value="" disabled selected>Seleccione una categoría</option>
-              <option v-for="categoria in categorias" :key="categoria.id" :value="categoria.id">
-                {{ categoria.nombre }}
-              </option>
-            </select>
-          </div>
-          
-          <!-- Imágenes del producto -->
-          <div class="form-group">
-            <label>Imágenes del producto*</label>
-            <div class="image-upload-container">
-              <div 
-                v-for="(imagen, index) in vistaPreviaImagenes" 
-                :key="index" 
-                class="image-preview"
-              >
-                <img :src="imagen" alt="Vista previa">
-                <button type="button" class="remove-btn" @click="eliminarImagen(index)">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              
-              <div class="upload-btn-wrapper" v-if="vistaPreviaImagenes.length < 5">
-                <button type="button" class="upload-btn">
-                  <i class="fas fa-plus"></i>
-                </button>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  @change="cargarImagen" 
-                  multiple
-                >
-              </div>
-            </div>
-            <small>Sube hasta 5 imágenes de tu producto (Máx. 5MB por imagen)</small>
-          </div>
-          
-          <!-- Descripción del producto -->
-          <div class="form-group">
-            <label for="descripcion">Descripción*</label>
-            <textarea 
-              id="descripcion" 
-              v-model="subasta.descripcion" 
-              required 
-              placeholder="Describe detalladamente tu producto incluyendo características, estado, defectos si los hay, etc."
-              rows="5"
-            ></textarea>
-          </div>
-          
-          <!-- Precios -->
-          <div class="form-row">
-            <div class="form-group half">
-              <label for="precioInicial">Precio Inicial (€)*</label>
-              <input 
-                id="precioInicial" 
-                v-model.number="subasta.precioInicial" 
-                type="number" 
-                step="0.01" 
-                min="0.01" 
+              <ion-select-option value="carros">Carros</ion-select-option>
+              <ion-select-option value="motos">Motos</ion-select-option>
+              <ion-select-option value="inmobiliaria">Inmobiliaria</ion-select-option>
+              <ion-select-option value="construccion">Construcción</ion-select-option>
+              <ion-select-option value="botes">Botes</ion-select-option>
+              <ion-select-option value="otra">Otra categoría</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Campo condicional para nueva categoría -->
+          <ion-item v-if="producto.categoria === 'otra'">
+            <ion-label position="stacked">Nueva Categoría</ion-label>
+            <ion-input 
+              v-model="producto.nuevaCategoria" 
+              type="text" 
+              placeholder="Ingrese la nueva categoría"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Descripción del Producto</ion-label>
+            <ion-textarea 
+              v-model="producto.descripcion" 
+              placeholder="Describa su producto"
+              required
+            ></ion-textarea>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Fotos</ion-label>
+            <ion-input 
+              type="file" 
+              multiple= "true"
+              accept="image/*"
+              @change="cargarImagenes"
+            ></ion-input>
+            <div class="nombres-archivos"></div>
+          </ion-item>
+
+          <div class="ion-margin-vertical">
+            <ion-text color="medium">
+              <h3>Fechas</h3>
+            </ion-text>
+            <ion-item>
+              <ion-label position="stacked">Apertura</ion-label>
+              <ion-datetime 
+                v-model="producto.fechaApertura" 
+                presentation="date"
+                placeholder="Seleccione fecha"
+              ></ion-datetime>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Hora de Apertura</ion-label>
+              <ion-select 
+                v-model="producto.horaApertura" 
+                placeholder="Seleccione hora"
+                interface="action-sheet"
                 required
               >
-              <small>Monto mínimo para iniciar la puja</small>
-            </div>
-            <div class="form-group half">
-              <label for="precioFinal">Precio de Compra Inmediata (€)*</label>
-              <input 
-                id="precioFinal" 
-                v-model.number="subasta.precioFinal" 
+                <ion-select-option 
+                  v-for="hora in horasDisponibles" 
+                  :key="hora" 
+                  :value="hora"
+                >
+                  {{ hora }}:00
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Cierre</ion-label>
+              <ion-datetime 
+                v-model="producto.fechaCierre" 
+                presentation="date"
+                placeholder="Seleccione fecha"
+              ></ion-datetime>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Hora de Cierre</ion-label>
+              <ion-select 
+                v-model="producto.horaCierre" 
+                placeholder="Seleccione hora"
+                interface="action-sheet"
+                required
+              >
+                <ion-select-option 
+                  v-for="hora in horasDisponibles" 
+                  :key="hora" 
+                  :value="hora"
+                >
+                  {{ hora }}:00
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <div class="ion-margin-vertical">
+            <ion-text color="medium">
+              <h3>Precios</h3>
+            </ion-text>
+            <ion-item>
+              <ion-label position="stacked">Precio Base</ion-label>
+              <ion-input 
+                v-model="producto.precioBase" 
                 type="number" 
-                step="0.01" 
                 min="0" 
-                required
-              >
-              <small>Precio para comprar sin esperar al fin de la subasta (0 = sin opción de compra inmediata)</small>
-            </div>
+                step="0.01"
+                placeholder="Ingrese precio base"
+              ></ion-input>
+              <ion-text slot="end" color="medium">COP</ion-text>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Precio Venta Inmediata</ion-label>
+              <ion-input 
+                v-model="producto.precioVentaInmediata" 
+                type="number" 
+                min="0" 
+                step="0.01"
+                placeholder="Ingrese precio de venta inmediata"
+              ></ion-input>
+              <ion-text slot="end" color="medium">COP</ion-text>
+            </ion-item>
           </div>
-          
-          <!-- Duración de la subasta -->
-          <div class="form-group">
-            <label for="duracion">Duración de la subasta*</label>
-            <select id="duracion" v-model="subasta.duracion" required>
-              <option value="" disabled selected>Seleccione la duración</option>
-              <option value="24">24 horas</option>
-              <option value="48">2 días</option>
-              <option value="72">3 días</option>
-              <option value="168">7 días</option>
-              <option value="336">14 días</option>
-              <option value="personalizada">Personalizada</option>
-            </select>
-          </div>
-          
-          <!-- Duración personalizada (condicional) -->
-          <div class="form-group" v-if="subasta.duracion === 'personalizada'">
-            <div class="form-row">
-              <div class="form-group half">
-                <label for="fechaInicio">Fecha de inicio*</label>
-                <input 
-                  id="fechaInicio" 
-                  v-model="subasta.fechaInicio" 
-                  type="datetime-local" 
-                  required
-                  :min="fechaInicioMinima"
-                >
-              </div>
-              <div class="form-group half">
-                <label for="fechaFin">Fecha de finalización*</label>
-                <input 
-                  id="fechaFin" 
-                  v-model="subasta.fechaFin" 
-                  type="datetime-local" 
-                  required
-                  :min="fechaFinMinima"
-                >
-              </div>
-            </div>
-          </div>
-          
-          <!-- Botones de acción -->
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="cancelar">Cancelar</button>
-            <button type="submit" class="btn-primary" :disabled="!formularioValido || enviando">
-              {{ enviando ? 'Publicando...' : 'Publicar Subasta' }}
-            </button>
+
+          <div class="botones-container ion-padding">
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="dark" 
+              @click="cancelar"
+            >
+              Cancelar
+            </ion-button>
+            <ion-button 
+              expand="block"
+              color="primary"
+              type="submit"
+              :disabled="!formularioValido"
+            >
+              Agregar Producto
+            </ion-button>
           </div>
         </form>
       </div>
-    </div>
-  </template>
+    </ion-content>
+  </ion-page>
+</template>
+
+<script setup>
+import { 
+  IonPage, 
+  IonHeader, 
+  IonToolbar, 
+  IonTitle, 
+  IonContent, 
+  IonButtons, 
+  IonMenuButton,
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
+  IonTextarea,
+  IonDatetime,
+  IonText,
+  IonButton
+} from '@ionic/vue';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// Generar horas disponibles de 0 a 23
+const horasDisponibles = Array.from({length: 24}, (_, i) => 
+  i.toString().padStart(2, '0')
+);
+
+const producto = ref({
+  nombre: '',
+  categoria: '',
+  nuevaCategoria: '',
+  descripcion: '',
+  fotos: [],
+  fechaApertura: null,
+  horaApertura: '',
+  fechaCierre: null,
+  horaCierre: '',
+  precioBase: null,
+  precioVentaInmediata: null
+});
+
+
+const formularioValido = computed(() => {
+  const categoriaValida = producto.value.categoria !== 'otra' || 
+    (producto.value.categoria === 'otra' && producto.value.nuevaCategoria.trim() !== '');
+
+  return producto.value.nombre && 
+         producto.value.categoria && 
+         categoriaValida &&
+         producto.value.descripcion && 
+         producto.value.fechaApertura && 
+         producto.value.horaApertura &&
+         producto.value.fechaCierre && 
+         producto.value.horaCierre &&
+         producto.value.precioBase !== null &&
+         producto.value.precioVentaInmediata !== null;
+});
+
+const cargarImagenes = (event) => {
+  // Forzar conversión de FileList a array
+  const archivos = Array.from(event.target.files);
   
-  <script>
-  // import AuctionService from '@/services/AuctionService';
-  
-  export default {
-    name: 'AgregarProductoPage',
-    data() {
-      return {
-        subasta: {
-          titulo: '',
-          categoria: '',
-          descripcion: '',
-          precioInicial: null,
-          precioFinal: null,
-          duracion: '',
-          fechaInicio: this.formatearFechaParaInput(new Date()),
-          fechaFin: '',
-          estado: 'Activa'
-        },
-        categorias: [
-          { id: 'electronics', nombre: 'Electrónica' },
-          { id: 'fashion', nombre: 'Moda' },
-          { id: 'home', nombre: 'Hogar' },
-          { id: 'sports', nombre: 'Deportes' },
-          { id: 'collectibles', nombre: 'Coleccionables' }
-        ],
-        archivosImagenes: [],
-        vistaPreviaImagenes: [],
-        enviando: false
-      };
-    },
-    computed: {
-      formularioValido() {
-        return (
-          this.subasta.titulo &&
-          this.subasta.categoria &&
-          this.subasta.descripcion &&
-          this.subasta.precioInicial > 0 &&
-          this.subasta.precioFinal >= 0 &&
-          this.subasta.duracion &&
-          this.vistaPreviaImagenes.length > 0
-        );
-      },
-      fechaInicioMinima() {
-        const ahora = new Date();
-        return this.formatearFechaParaInput(ahora);
-      },
-      fechaFinMinima() {
-        if (!this.subasta.fechaInicio) return this.fechaInicioMinima;
-        
-        const fechaInicio = new Date(this.subasta.fechaInicio);
-        // Mínimo 1 hora después de la fecha de inicio
-        fechaInicio.setHours(fechaInicio.getHours() + 1);
-        return this.formatearFechaParaInput(fechaInicio);
-      }
-    },
-    created() {
-      // Inicializar fecha de fin por defecto (24h después)
-      const fechaFin = new Date();
-      fechaFin.setHours(fechaFin.getHours() + 24);
-      this.subasta.fechaFin = this.formatearFechaParaInput(fechaFin);
-      
-      // Cargar categorías desde el API (simulado aquí)
-      this.cargarCategorias();
-    },
-    methods: {
-      formatearFechaParaInput(fecha) {
-        const d = new Date(fecha);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      },
-      
-      async cargarCategorias() {
-        try {
-          // Aquí se haría una llamada al API para obtener las categorías
-          // Por ahora usamos las hardcodeadas en data()
-          // const categorias = await AuctionService.getCategorias();
-          // this.categorias = categorias;
-        } catch (error) {
-          console.error('Error al cargar categorías:', error);
-        }
-      },
-      
-      cargarImagen(event) {
-        const nuevosArchivos = Array.from(event.target.files);
-        
-        // Validar tamaño de archivos (max 5MB)
-        const archivosValidos = nuevosArchivos.filter(archivo => archivo.size <= 5 * 1024 * 1024);
-        
-        if (archivosValidos.length < nuevosArchivos.length) {
-          alert('Algunas imágenes exceden el tamaño máximo de 5MB y no serán añadidas');
-        }
-        
-        // Limitar a máximo 5 imágenes
-        const espaciosDisponibles = 5 - this.archivosImagenes.length;
-        const archivosParaAgregar = archivosValidos.slice(0, espaciosDisponibles);
-        
-        if (archivosParaAgregar.length < archivosValidos.length) {
-          alert('Solo se pueden añadir un máximo de 5 imágenes');
-        }
-        
-        // Generar vistas previas y añadir archivos
-        archivosParaAgregar.forEach(archivo => {
-          this.archivosImagenes.push(archivo);
-          
-          const reader = new FileReader();
-          reader.onload = e => {
-            this.vistaPreviaImagenes.push(e.target.result);
-          };
-          reader.readAsDataURL(archivo);
-        });
-        
-        // Resetear input para permitir seleccionar el mismo archivo de nuevo
-        event.target.value = '';
-      },
-      
-      eliminarImagen(index) {
-        this.archivosImagenes.splice(index, 1);
-        this.vistaPreviaImagenes.splice(index, 1);
-      },
-      
-      cancelar() {
-        if (confirm('¿Estás seguro de que deseas cancelar? Se perderán todos los datos introducidos.')) {
-          this.$router.go(-1);
-        }
-      },
-      
-      async crearSubasta() {
-        if (!this.formularioValido) return;
-        
-        try {
-          this.enviando = true;
-          
-          // Preparar datos de la subasta según el requisito RF03
-          const datosSubasta = {
-            ...this.subasta,
-            vendedorId: 'user123', // Reemplazar con ID real del vendedor autenticado
-            numeroPujas: 0
-          };
-          
-          // Si no es duración personalizada, calcular fechas
-          if (this.subasta.duracion !== 'personalizada') {
-            const horasParaAgregar = parseInt(this.subasta.duracion);
-            const fechaInicio = new Date();
-            const fechaFin = new Date();
-            fechaFin.setHours(fechaFin.getHours() + horasParaAgregar);
-            
-            datosSubasta.fechaInicio = fechaInicio.toISOString();
-            datosSubasta.fechaFin = fechaFin.toISOString();
-          }
-          
-          // Primero subir imágenes y obtener URLs (simulado)
-          const urlsImagenes = await this.subirImagenes();
-          datosSubasta.imagenes = urlsImagenes;
-          
-          // Aquí se haría la llamada al API para crear la subasta
-          // const subastaCreada = await AuctionService.crearSubasta(datosSubasta);
-          
-          // Simulamos la creación exitosa
-          console.log('Datos de la subasta a crear:', datosSubasta);
-          setTimeout(() => {
-            alert('¡Subasta creada con éxito!');
-            this.$router.push('/mis-subastas');
-            this.enviando = false;
-          }, 1500);
-          
-        } catch (error) {
-          console.error('Error al crear la subasta:', error);
-          alert('Error al crear la subasta. Por favor, inténtelo de nuevo.');
-          this.enviando = false;
-        }
-      },
-      
-      async subirImagenes() {
-        // Simulación de subida de imágenes (reemplazar por implementación real)
-        return new Promise(resolve => {
-          setTimeout(() => {
-            // Simular URLs de imágenes subidas
-            resolve(this.vistaPreviaImagenes.map((_, index) => 
-              `https://api.mercabit.com/images/auction-${Date.now()}-${index}.jpg`
-            ));
-          }, 1000);
-        });
-      }
-    }
+  console.log('Archivos seleccionados:', archivos);
+  console.log('Número de archivos:', archivos.length);
+
+  // Verificar si se seleccionaron archivos
+  if (archivos.length > 0) {
+    // Guardar los archivos
+    producto.value.fotos = archivos;
+
+    // Detalles de cada archivo
+    archivos.forEach((archivo, index) => {
+      console.log(`Archivo ${index + 1}:`, {
+        nombre: archivo.name,
+        tamaño: archivo.size,
+        tipo: archivo.type
+      });
+    });
+
+    // Nombres de archivos
+    const nombresArchivos = archivos.map(archivo => archivo.name).join(', ');
+    console.log('Nombres de archivos:', nombresArchivos);
   }
-  </script>
-  
-  <style scoped>
-  .agregar-producto-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .header {
-    margin-bottom: 24px;
-  }
-  
-  .header h1 {
-    font-size: 24px;
-    margin-bottom: 8px;
-  }
-  
-  .form-container {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    padding: 24px;
-  }
-  
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  .form-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  
-  .half {
-    flex: 1;
-  }
-  
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-  }
-  
-  input[type="text"],
-  input[type="number"],
-  input[type="datetime-local"],
-  select,
-  textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-  
-  small {
-    display: block;
-    margin-top: 4px;
-    color: #777;
-    font-size: 12px;
-  }
-  
-  .image-upload-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 10px;
-  }
-  
-  .image-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid #ddd;
-  }
-  
-  .image-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .remove-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  
-  .upload-btn-wrapper {
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-    width: 120px;
-    height: 120px;
-  }
-  
-  .upload-btn {
-    width: 100%;
-    height: 100%;
-    border: 2px dashed #ddd;
-    background: #f9f9f9;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: #777;
-    cursor: pointer;
-  }
-  
-  .upload-btn-wrapper input[type=file] {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px;
-  }
-  
-  .btn-primary, .btn-secondary {
-    padding: 12px 24px;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    font-size: 16px;
-  }
-  
-  .btn-primary {
-    background-color: #3880ff;
-    color: white;
-  }
-  
-  .btn-primary:disabled {
-    background-color: #93b8fd;
-    cursor: not-allowed;
-  }
-  
-  .btn-secondary {
-    background-color: #f4f5f8;
-    color: #333;
-  }
-  
-  @media (max-width: 600px) {
-    .form-row {
-      flex-direction: column;
-      gap: 0;
-    }
+};
+
+const cancelar = () => {
+  // Resetear el formulario
+  producto.value = {
+    nombre: '',
+    categoria: '',
+    nuevaCategoria: '',
+    descripcion: '',
+    fotos: [],
+    fechaApertura: null,
+    horaApertura: '',
+    fechaCierre: null,
+    horaCierre: '',
+    precioBase: null,
+    precioVentaInmediata: null
+  };
+
+  // Resetear input de archivos
+  const fileInput = document.querySelector('ion-input[type="file"]');
+  if (fileInput) {
+    // Método más robusto para limpiar el input
+    fileInput.value = null;
     
-    .form-container {
-      padding: 16px;
-    }
+    // Trigger change event
+    const event = new Event('change', { bubbles: true });
+    fileInput.dispatchEvent(event);
   }
-  </style>
+
+  router.push('/home');
+};
+const crearProducto = async () => {
+  try {
+    const categoriaFinal = producto.value.categoria === 'otra' 
+      ? producto.value.nuevaCategoria 
+      : producto.value.categoria;
+
+    // Combinar fecha y hora para crear un datetime completo
+    const fechaAperturaCompleta = new Date(producto.value.fechaApertura);
+    fechaAperturaCompleta.setHours(parseInt(producto.value.horaApertura), 0, 0);
+
+    const fechaCierreCompleta = new Date(producto.value.fechaCierre);
+    fechaCierreCompleta.setHours(parseInt(producto.value.horaCierre), 0, 0);
+
+    const productoDatos = {
+      ...producto.value,
+      categoria: categoriaFinal,
+      fechaAperturaCompleta: fechaAperturaCompleta.toISOString(),
+      fechaCierreCompleta: fechaCierreCompleta.toISOString()
+    };
+
+    console.log('Producto a crear:', productoDatos);
+    // Aquí iría la lógica de guardar el producto
+    // await ProductoService.crear(productoDatos);
+    
+    router.push('/home');
+  } catch (error) {
+    console.error('Error al crear producto:', error);
+  }
+};
+</script>
+
+<style scoped>
+.crear-producto-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
+.botones-container {
+  display: flex;
+  gap: 10px;
+}
+
+.botones-container ion-button {
+  flex: 1;
+}
+</style>
