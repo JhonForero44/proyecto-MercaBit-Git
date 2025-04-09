@@ -51,6 +51,12 @@ const routes = [
           hideLayout: true 
         }
       },
+      {
+        path: '/notification',
+        name: 'Notification',
+        component: () => import('@/views/Notification.vue')
+      },
+      
       
       /*
       {

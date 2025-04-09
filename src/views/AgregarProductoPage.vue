@@ -323,7 +323,7 @@ const crearProducto = async () => {
       creadoEn: new Date().toISOString()
     };
 
-    await addDoc(collection(db, 'products'), {
+    const docRef = await addDoc(collection(db, 'products'), {
   userId: auth.currentUser?.uid || null,
   nombre: producto.value.nombre,
   descripcion: producto.value.descripcion,
@@ -333,6 +333,14 @@ const crearProducto = async () => {
   fechaApertura: fechaAperturaCompleta.toISOString(),
   fechaCierre: fechaCierreCompleta.toISOString(),
   creadoEn: new Date().toISOString()
+});
+
+// Crea una notificación global en Firestore
+await addDoc(collection(db, 'notificaciones'), {
+  mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
+  timestamp: new Date().toISOString(),
+  productoId: docRef.id,
+  creadoPor: auth.currentUser?.uid || null
 });
 
 console.log("Datos del producto:", JSON.stringify(producto.value, null, 2));
