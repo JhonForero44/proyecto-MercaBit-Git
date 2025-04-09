@@ -32,7 +32,27 @@ const routes = [
         path: 'buscar',
         component: () => import('@/views/Buscar.vue'),
         meta: { requiresAuth: true },
-      },/*
+      },
+      {
+        path: 'agregar-producto',
+        component: () => import('@/views/AgregarProductoPage.vue'),
+        meta: 
+        {
+          requiresAuth: true ,
+          hideLayout: true 
+        }
+      },
+      {
+        path: 'mis-publicaciones',
+        component: () => import('@/views/MisPublicaciones.vue'),
+        meta: 
+        {
+          requiresAuth: true ,
+          hideLayout: true 
+        }
+      },
+      
+      /*
       {
         path: 'notificaciones',
         component: () => import('@/views/Notificaciones.vue'),
@@ -43,11 +63,7 @@ const routes = [
         component: () => import('@/views/MisVentasPage.vue'),
         meta: { requiresAuth: true },
       },
-      {
-        path: 'agregar-producto',
-        component: () => import('@/views/AgregarProductoPage.vue'),
-        meta: { requiresAuth: true },
-      },
+      
       {
         path: 'categorias',
         component: () => import('@/views/Categorias.vue'),

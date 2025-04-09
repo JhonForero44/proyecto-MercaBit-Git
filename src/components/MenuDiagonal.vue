@@ -27,6 +27,14 @@
             <ion-icon :icon="checkmarkCircleOutline" slot-v="start" />
             <ion-label>Ofertas realizadas</ion-label>
           </ion-item>
+          <ion-item router-link="/agregar-producto" router-direction="root">
+            <ion-icon :icon="addOutline" slot-v="start" />
+            <ion-label>Agregar producto</ion-label>
+          </ion-item>
+          <ion-item router-link="/mis-publicaciones" router-direction="root">
+            <ion-icon :icon="bagCheckOutline" slot-v="start" />
+            <ion-label>Mis publicaciones</ion-label>
+          </ion-item>
           <ion-item router-link="/categorias" router-direction="root">
             <ion-icon :icon="folderOutline" slot-v="start" />
             <ion-label>Categorías</ion-label>
@@ -77,7 +85,9 @@ import {
   folderOutline,
   personOutline,
   informationCircleOutline,
-  logOutOutline
+  logOutOutline,
+  addOutline,
+  bagCheckOutline
 } from 'ionicons/icons';
 import { logoutUser } from '@/services/authService';
 import { useRouter } from 'vue-router';
