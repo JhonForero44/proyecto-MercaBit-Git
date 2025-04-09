@@ -16,7 +16,16 @@ const routes = [
     component: () => import('@/views/Registro.vue'),
   },
   {
+<<<<<<< Updated upstream
     path: '/',
+=======
+    path: '/recuperar-contrasena',
+    component: () => import('@/views/RecuperarContraseña.vue'),
+  },
+  
+  {
+    path: '',
+>>>>>>> Stashed changes
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
       {
@@ -28,7 +37,37 @@ const routes = [
         path: 'buscar',
         component: () => import('@/views/Buscar.vue'),
         meta: { requiresAuth: true },
+<<<<<<< Updated upstream
       },/*
+=======
+      },
+      {
+        path: 'agregar-producto',
+        component: () => import('@/views/AgregarProductoPage.vue'),
+        meta: 
+        {
+          requiresAuth: true ,
+          hideLayout: true 
+        }
+      },
+      {
+        path: 'mis-publicaciones',
+        component: () => import('@/views/MisPublicaciones.vue'),
+        meta: 
+        {
+          requiresAuth: true ,
+          hideLayout: true 
+        }
+      },
+      {
+        path: '/notification',
+        name: 'Notification',
+        component: () => import('@/views/Notification.vue')
+      },
+      
+     
+      /*
+>>>>>>> Stashed changes
       {
         path: 'notificaciones',
         component: () => import('@/views/Notificaciones.vue'),

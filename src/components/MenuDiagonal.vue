@@ -15,7 +15,7 @@
             <ion-icon :icon="searchOutline" slot-v="start" />
             <ion-label>Buscar</ion-label>
           </ion-item>
-          <ion-item router-link="/notificaciones" router-direction="root">
+          <ion-item router-link="/Notification" router-direction="root">
             <ion-icon :icon="notificationsOutline" slot-v="start" />
             <ion-label>Notificaciones</ion-label>
           </ion-item>
