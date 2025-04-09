@@ -42,6 +42,15 @@ const routes = [
           hideLayout: true 
         }
       },
+      {
+        path: 'mis-publicaciones',
+        component: () => import('@/views/MisPublicaciones.vue'),
+        meta: 
+        {
+          requiresAuth: true ,
+          hideLayout: true 
+        }
+      },
       
       /*
       {
