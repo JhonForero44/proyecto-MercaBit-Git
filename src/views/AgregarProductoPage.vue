@@ -172,6 +172,7 @@
               color="primary"
               type="submit"
               :disabled="!formularioValido"
+              
             >
               Agregar Producto
             </ion-button>
@@ -203,6 +204,8 @@ import {
 } from '@ionic/vue';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { db, auth } from '../firebase/FirebaseConfig';
+import { collection, addDoc } from 'firebase/firestore';
 
 const router = useRouter();
 
@@ -298,13 +301,13 @@ const cancelar = () => {
 
   router.push('/home');
 };
+// Inicializa Firestore
 const crearProducto = async () => {
   try {
     const categoriaFinal = producto.value.categoria === 'otra' 
       ? producto.value.nuevaCategoria 
       : producto.value.categoria;
 
-    // Combinar fecha y hora para crear un datetime completo
     const fechaAperturaCompleta = new Date(producto.value.fechaApertura);
     fechaAperturaCompleta.setHours(parseInt(producto.value.horaApertura), 0, 0);
 
@@ -314,19 +317,57 @@ const crearProducto = async () => {
     const productoDatos = {
       ...producto.value,
       categoria: categoriaFinal,
-      fechaAperturaCompleta: fechaAperturaCompleta.toISOString(),
-      fechaCierreCompleta: fechaCierreCompleta.toISOString()
+      fechaApertura: fechaAperturaCompleta.toISOString(),
+      fechaCierre: fechaCierreCompleta.toISOString(),
+      userId: auth.currentUser?.uid || null,
+      creadoEn: new Date().toISOString()
     };
 
-    console.log('Producto a crear:', productoDatos);
-    // Aquí iría la lógica de guardar el producto
-    // await ProductoService.crear(productoDatos);
-    
-    router.push('/home');
+    await addDoc(collection(db, 'products'), {
+  userId: auth.currentUser?.uid || null,
+  nombre: producto.value.nombre,
+  descripcion: producto.value.descripcion,
+  categoria: categoriaFinal,
+  precioBase: producto.value.precioBase,
+  precioVentaInmediata: producto.value.precioVentaInmediata,
+  fechaApertura: fechaAperturaCompleta.toISOString(),
+  fechaCierre: fechaCierreCompleta.toISOString(),
+  creadoEn: new Date().toISOString()
+});
+
+console.log("Datos del producto:", JSON.stringify(producto.value, null, 2));
+console.log("¿Formulario válido?:", formularioValido.value);
+
+// Limpiar los campos después de crear el producto
+producto.value = {
+  nombre: '',
+  categoria: '',
+  nuevaCategoria: '',
+  descripcion: '',
+  fotos: [],
+  fechaApertura: null,
+  horaApertura: '',
+  fechaCierre: null,
+  horaCierre: '',
+  precioBase: null,
+  precioVentaInmediata: null
+};
+
+// Limpiar input de archivos manualmente
+const fileInput = document.querySelector('ion-input[type="file"]');
+if (fileInput) {
+  fileInput.value = null;
+  const event = new Event('change', { bubbles: true });
+  fileInput.dispatchEvent(event);
+}
+
+
+    router.push('/mis-publicaciones');
   } catch (error) {
-    console.error('Error al crear producto:', error);
+    console.error("Error al guardar producto:", error);
   }
 };
+
 </script>
 
 <style scoped>
