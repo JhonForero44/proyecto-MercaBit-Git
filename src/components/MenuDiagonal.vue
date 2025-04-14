@@ -7,7 +7,7 @@
       </div>
       <ion-list>
         <ion-menu-toggle auto-hide="false">
-          <ion-item router-link="/" router-direction="root">
+          <ion-item router-link="/home" router-direction="root">
             <ion-icon :icon="homeOutline" slot-v="start" />
             <ion-label>Inicio</ion-label>
           </ion-item>
