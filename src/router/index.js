@@ -36,19 +36,19 @@ const routes = [
       {
         path: 'agregar-producto',
         component: () => import('@/views/AgregarProductoPage.vue'),
-        meta: 
+        meta:
         {
-          requiresAuth: true ,
-          hideLayout: true 
+          requiresAuth: true,
+          hideLayout: true
         }
       },
       {
         path: 'mis-publicaciones',
         component: () => import('@/views/MisPublicaciones.vue'),
-        meta: 
+        meta:
         {
-          requiresAuth: true ,
-          hideLayout: true 
+          requiresAuth: true,
+          hideLayout: true
         }
       },
       {
@@ -56,8 +56,15 @@ const routes = [
         name: 'Notification',
         component: () => import('@/views/Notification.vue')
       },
-      
-      
+      {
+        path: '/accerca-de-la-app',
+        component: () => import('@/views/AcercaDeLaApp.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/terminos-condiciones',
+        component: () => import('@/views/Terminos-condiciones.vue'),
+      },
       /*
       {
         path: 'notificaciones',
@@ -76,11 +83,6 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
-        path: 'acerca-de-la-app',
-        component: () => import('@/views/AcercaDeLaApp.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
         path: 'mi-cuenta',
         component: () => import('@/views/MiCuenta.vue'),
         meta: { requiresAuth: true },
@@ -96,7 +98,7 @@ const router = createRouter({
 
 // **Navigation Guard para verificar autenticación**
 router.beforeEach((to, from, next) => {
-  if (to.meta.requiresAuth) { 
+  if (to.meta.requiresAuth) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         next(); // Si el usuario está autenticado, continuar
