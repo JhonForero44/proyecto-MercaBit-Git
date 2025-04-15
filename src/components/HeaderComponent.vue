@@ -30,6 +30,7 @@ const pageTitle = computed(() => {
     '/categorias': 'Categorías',
     '/informacion-personal': 'Informacion Personal',
     '/mis-compras': 'Mis Compras',
+    '/detalles-producto/:id': 'Comprar Producto'
   }
   return titles[route.path] || ''
 })
