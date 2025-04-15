@@ -32,6 +32,7 @@ const route = useRoute();
 const pageTitle = computed(() => {
   const titles = {
     '/login': 'Inicio de Sesion',
+    '/home': 'MercaBit - Productos',
     '/registro': 'Registro',
     '/recuperar-contrasena': 'Recuperar Contraseña',
     '/accerca-de-la-app': 'Acerca de MercaBit',
