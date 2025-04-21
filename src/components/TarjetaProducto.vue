@@ -1,14 +1,6 @@
 <template>
-  <ion-card @click="irADetalles" class="tarjeta-producto">
-    <ion-slides :options="slideOpts" v-if="producto.imagenes && producto.imagenes.length">
-      <ion-slide v-for="(imagen, index) in producto.imagenes" :key="index">
-        <img :src="imagen.url" alt="Imagen del producto" />
-      </ion-slide>
-    </ion-slides>
-
-    <!--Imagen de respaldo-->    
-    <img v-else src="/img/imagen-prueba.jpg" alt="Imagen del producto" />
-
+  <ion-card @click="verProducto" class="tarjeta-producto">
+    <img :src="producto.imagenes && producto.imagenes[0]?.url" />
     <ion-card-header>
       <ion-card-title>{{ producto.nombre }}</ion-card-title>
       <ion-card-subtitle>{{ producto.categoria }}</ion-card-subtitle>
@@ -23,9 +15,9 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
+const router = useRouter(); 
 
 const props = defineProps({
   producto: {
@@ -34,19 +26,14 @@ const props = defineProps({
   }
 })
 
-//Carrusel de imagenes 
-const slideOpts = {
-  initialSlide: 0,
-  speed: 400,
-  autoplay: {
-    delay: 3000,
-  },
-  loop: true
-}
-
-function irADetalles() {
-  //router.push('/terminos-condiciones');
-  router.push(`/producto/${props.producto.id}`) 
+// Función para redirigir a la página del producto (subasta)
+function verProducto() {
+  if (props.producto && props.producto.id) {
+    // Redirigir a la página de subasta del producto usando el id
+    router.push(`/producto/${props.producto.id}`)
+  } else {
+    console.error("ID del producto no disponible");
+  }
 }
 
 function formatoFecha(fecha) {
@@ -89,15 +76,24 @@ img {
   border-radius: 8px 8px 0 0;
 }
 
+/* Efecto Hover */
+ion-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+ion-card:hover {
+  transform: translateY(-10px); /* Eleva ligeramente la tarjeta */
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1); /* Sombra para darle un efecto flotante */
+}
+
 .tarjeta-producto {
   cursor: pointer;
-  /* <- ESTO activa el cursor tipo "mano" */
   transition: transform 0.2s ease-in-out;
 }
 
 .tarjeta-producto:hover {
   transform: scale(1.02);
-  /* opcional: agranda un poquito al pasar el mouse */
 }
 
 </style>
