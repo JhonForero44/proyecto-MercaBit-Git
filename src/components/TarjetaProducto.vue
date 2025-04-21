@@ -1,6 +1,6 @@
 <template>
-  <ion-card>
-    <img :src="producto.imagenUrl || '/img/imagen-prueba.jpg'" alt="Imagen del producto" />
+  <ion-card @click="verProducto">
+    <img :src="producto.imagenes && producto.imagenes[0]?.url" />
     <ion-card-header>
       <ion-card-title>{{ producto.nombre }}</ion-card-title>
       <ion-card-subtitle>{{ producto.categoria }}</ion-card-subtitle>
@@ -15,12 +15,28 @@
 </template>
 
 <script setup>
-defineProps({
+import { useRouter } from 'vue-router';
+
+
+const router = useRouter(); 
+
+
+const props = defineProps({
   producto: {
     type: Object,
     required: true
   }
 })
+
+// Función para redirigir a la página del producto (subasta)
+function verProducto() {
+  if (props.producto && props.producto.id) {
+    // Redirigir a la página de subasta del producto usando el id
+    router.push({ name: 'Producto-subasta', params: { id: props.producto.id } });
+  } else {
+    console.error("ID del producto no disponible");
+  }
+}
 
 function formatoFecha(fecha) {
   try {
@@ -60,5 +76,16 @@ img {
   height: 200px;
   object-fit: cover;
   border-radius: 8px 8px 0 0;
+}
+
+/* Efecto Hover */
+ion-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+ion-card:hover {
+  transform: translateY(-10px); /* Eleva ligeramente la tarjeta */
+  box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1); /* Sombra para darle un efecto flotante */
 }
 </style>
