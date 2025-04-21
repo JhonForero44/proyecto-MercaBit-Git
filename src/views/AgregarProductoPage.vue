@@ -63,11 +63,16 @@
             <ion-label position="stacked">Fotos</ion-label>
             <ion-input 
               type="file" 
-              multiple= "true"
+              multiple="true"
               accept="image/*"
               @change="cargarImagenes"
             ></ion-input>
-            <div class="nombres-archivos"></div>
+            <div class="imagenes-preview">
+              <div v-for="(preview, index) in imagenesPreview" :key="index" class="imagen-preview-container">
+                <img :src="preview" class="imagen-preview"/>
+                <ion-icon name="close-circle" class="eliminar-imagen" @click="eliminarImagenPreview(index)"></ion-icon>
+              </div>
+            </div>
           </ion-item>
 
           <div class="ion-margin-vertical">
@@ -76,10 +81,18 @@
             </ion-text>
             <ion-item>
               <ion-label position="stacked">Apertura</ion-label>
-              <ion-datetime 
-                v-model="producto.fechaApertura" 
-                presentation="date"
+              <ion-input 
+                :value="mostrarFecha(producto.fechaApertura)"
                 placeholder="Seleccione fecha"
+                @click="mostrarCalendarioApertura = true"
+                readonly
+              ></ion-input>
+              <ion-datetime 
+                v-if="mostrarCalendarioApertura"
+                v-model="producto.fechaApertura"
+                presentation="date"
+                @ionChange="onDateChangeApertura"
+                @ionCancel="mostrarCalendarioApertura = false"
               ></ion-datetime>
             </ion-item>
 
@@ -103,10 +116,18 @@
 
             <ion-item>
               <ion-label position="stacked">Cierre</ion-label>
-              <ion-datetime 
-                v-model="producto.fechaCierre" 
-                presentation="date"
+              <ion-input 
+                :value="mostrarFecha(producto.fechaCierre)"
                 placeholder="Seleccione fecha"
+                @click="mostrarCalendarioCierre = true"
+                readonly
+              ></ion-input>
+              <ion-datetime 
+                v-if="mostrarCalendarioCierre"
+                v-model="producto.fechaCierre"
+                presentation="date"
+                @ionChange="onDateChangeCierre"
+                @ionCancel="mostrarCalendarioCierre = false"
               ></ion-datetime>
             </ion-item>
 
@@ -171,11 +192,16 @@
               expand="block"
               color="primary"
               type="submit"
-              :disabled="!formularioValido"
-              
+              :disabled="cargandoImagenes || !formularioValido"
             >
-              Agregar Producto
+              {{ cargandoImagenes ? 'Subiendo...' : 'Agregar Producto' }}
             </ion-button>
+          </div>
+
+          <!-- Indicador de progreso para subida de imágenes -->
+          <div v-if="cargandoImagenes" class="progreso-container">
+            <ion-progress-bar :value="progresoSubida"></ion-progress-bar>
+            <ion-text color="medium">Subiendo imágenes: {{ Math.round(progresoSubida * 100) }}%</ion-text>
           </div>
         </form>
       </div>
@@ -200,14 +226,47 @@ import {
   IonTextarea,
   IonDatetime,
   IonText,
-  IonButton
+  IonButton,
+  IonIcon,
+  IonProgressBar
 } from '@ionic/vue';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { db, auth } from '../firebase/FirebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { db, auth, storage } from '../firebase/FirebaseConfig';
+import { collection, addDoc, updateDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid'; // Necesitarás instalar este paquete: npm install uuid
 
+const mostrarCalendarioApertura = ref(false);
+const mostrarCalendarioCierre = ref(false);
 const router = useRouter();
+const cargandoImagenes = ref(false);
+const progresoSubida = ref(0);
+const imagenesPreview = ref([]);
+const imagenesSubidas = ref([]);
+
+// Añadir este método de formateo de fecha
+const mostrarFecha = (fechaStr) => {
+  if (!fechaStr) return '';
+  
+  // Convertir de formato ISO a DD/MM/YYYY
+  const fecha = new Date(fechaStr);
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = fecha.getFullYear();
+  
+  return `${dia}/${mes}/${anio}`;
+};
+
+const onDateChangeApertura = (event) => {
+  producto.value.fechaApertura = event.detail.value;
+  mostrarCalendarioApertura.value = false;
+};
+
+const onDateChangeCierre = (event) => {
+  producto.value.fechaCierre = event.detail.value;
+  mostrarCalendarioCierre.value = false;
+};
 
 // Generar horas disponibles de 0 a 23
 const horasDisponibles = Array.from({length: 24}, (_, i) => 
@@ -228,7 +287,6 @@ const producto = ref({
   precioVentaInmediata: null
 });
 
-
 const formularioValido = computed(() => {
   const categoriaValida = producto.value.categoria !== 'otra' || 
     (producto.value.categoria === 'otra' && producto.value.nuevaCategoria.trim() !== '');
@@ -242,8 +300,14 @@ const formularioValido = computed(() => {
          producto.value.fechaCierre && 
          producto.value.horaCierre &&
          producto.value.precioBase !== null &&
-         producto.value.precioVentaInmediata !== null;
+         producto.value.precioVentaInmediata !== null &&
+         producto.value.fotos.length > 0; // Ahora requerimos al menos una foto
 });
+
+const eliminarImagenPreview = (index) => {
+  imagenesPreview.value.splice(index, 1);
+  producto.value.fotos.splice(index, 1);
+};
 
 const cargarImagenes = (event) => {
   // Forzar conversión de FileList a array
@@ -254,8 +318,21 @@ const cargarImagenes = (event) => {
 
   // Verificar si se seleccionaron archivos
   if (archivos.length > 0) {
+    // Vaciar las fotos existentes si las hay
+    producto.value.fotos = [];
+    imagenesPreview.value = [];
+    
     // Guardar los archivos
     producto.value.fotos = archivos;
+
+    // Crear previsualizaciones para las imágenes
+    archivos.forEach(archivo => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagenesPreview.value.push(e.target.result);
+      };
+      reader.readAsDataURL(archivo);
+    });
 
     // Detalles de cada archivo
     archivos.forEach((archivo, index) => {
@@ -265,11 +342,71 @@ const cargarImagenes = (event) => {
         tipo: archivo.type
       });
     });
-
-    // Nombres de archivos
-    const nombresArchivos = archivos.map(archivo => archivo.name).join(', ');
-    console.log('Nombres de archivos:', nombresArchivos);
   }
+};
+
+const subirImagenes = async (userId, productoId) => {
+  const fotos = producto.value.fotos;
+  const totalFotos = fotos.length;
+  let fotosSubidas = 0;
+  const urlsImagenes = [];
+
+  return new Promise((resolve, reject) => {
+    if (fotos.length === 0) {
+      resolve([]);
+      return;
+    }
+
+    fotos.forEach((foto, index) => {
+      // Crear nombre único para cada imagen
+      const extension = foto.name.split('.').pop();
+      const nombreArchivo = `${uuidv4()}.${extension}`;
+      
+      // Crear referencia para guardar en Firebase Storage
+      const imagenRef = storageRef(storage, `productos/${userId}/${productoId}/${nombreArchivo}`);
+      
+      // Iniciar la subida
+      const tareaSubida = uploadBytesResumable(imagenRef, foto);
+      
+      // Monitorear el progreso de la subida
+      tareaSubida.on('state_changed', 
+        (snapshot) => {
+          // Calcular progreso total de todas las imágenes
+          const progresoActual = snapshot.bytesTransferred / snapshot.totalBytes;
+          const progresoPorImagen = progresoActual / totalFotos;
+          const progresoAnterior = (fotosSubidas / totalFotos);
+          
+          progresoSubida.value = progresoAnterior + progresoPorImagen;
+        }, 
+        (error) => {
+          console.error("Error al subir imagen:", error);
+          reject(error);
+        }, 
+        async () => {
+          // Obtener URL de la imagen subida
+          try {
+            const downloadURL = await getDownloadURL(tareaSubida.snapshot.ref);
+            urlsImagenes.push({
+              url: downloadURL,
+              nombre: foto.name,
+              path: `productos/${userId}/${productoId}/${nombreArchivo}`
+            });
+            
+            fotosSubidas++;
+            console.log(`Imagen ${index + 1} subida correctamente. URL:`, downloadURL);
+            
+            // Si todas las imágenes se han subido, resolver la promesa
+            if (fotosSubidas === totalFotos) {
+              resolve(urlsImagenes);
+            }
+          } catch (error) {
+            console.error("Error al obtener URL de imagen:", error);
+            reject(error);
+          }
+        }
+      );
+    });
+  });
 };
 
 const cancelar = () => {
@@ -288,6 +425,9 @@ const cancelar = () => {
     precioVentaInmediata: null
   };
 
+  // Limpiar previsualizaciones
+  imagenesPreview.value = [];
+
   // Resetear input de archivos
   const fileInput = document.querySelector('ion-input[type="file"]');
   if (fileInput) {
@@ -301,9 +441,18 @@ const cancelar = () => {
 
   router.push('/home');
 };
-// Inicializa Firestore
+
+// Función principal para crear un producto
 const crearProducto = async () => {
+  if (!auth.currentUser) {
+    console.error("Usuario no autenticado");
+    return;
+  }
+
   try {
+    cargandoImagenes.value = true;
+    progresoSubida.value = 0;
+
     const categoriaFinal = producto.value.categoria === 'otra' 
       ? producto.value.nuevaCategoria 
       : producto.value.categoria;
@@ -314,68 +463,76 @@ const crearProducto = async () => {
     const fechaCierreCompleta = new Date(producto.value.fechaCierre);
     fechaCierreCompleta.setHours(parseInt(producto.value.horaCierre), 0, 0);
 
-    const productoDatos = {
-      ...producto.value,
+    // Primero crear el documento en Firestore para obtener el ID
+    const docRef = await addDoc(collection(db, 'products'), {
+      userId: auth.currentUser.uid,
+      nombre: producto.value.nombre,
+      descripcion: producto.value.descripcion,
       categoria: categoriaFinal,
+      precioBase: producto.value.precioBase,
+      precioVentaInmediata: producto.value.precioVentaInmediata,
       fechaApertura: fechaAperturaCompleta.toISOString(),
       fechaCierre: fechaCierreCompleta.toISOString(),
-      userId: auth.currentUser?.uid || null,
-      creadoEn: new Date().toISOString()
+      creadoEn: new Date().toISOString(),
+      estado: "Disponible",  // Aquí agregamos el campo `estado` con valor "Disponible"
+      imagenes: [] // Inicialmente vacío, se actualizará después
+    });
+
+    // Ahora subir las imágenes a Storage
+    const imagenes = await subirImagenes(auth.currentUser.uid, docRef.id);
+
+    // Actualizar el documento con las URLs de las imágenes
+    const updateData = {
+      imagenes: imagenes
     };
 
-    const docRef = await addDoc(collection(db, 'products'), {
-  userId: auth.currentUser?.uid || null,
-  nombre: producto.value.nombre,
-  descripcion: producto.value.descripcion,
-  categoria: categoriaFinal,
-  precioBase: producto.value.precioBase,
-  precioVentaInmediata: producto.value.precioVentaInmediata,
-  fechaApertura: fechaAperturaCompleta.toISOString(),
-  fechaCierre: fechaCierreCompleta.toISOString(),
-  creadoEn: new Date().toISOString()
-});
+    // Actualizar el documento en Firestore con las referencias de imágenes
+    await updateDoc(docRef, updateData);
 
-// Crea una notificación global en Firestore
-await addDoc(collection(db, 'notificaciones'), {
-  mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
-  timestamp: new Date().toISOString(),
-  productoId: docRef.id,
-  creadoPor: auth.currentUser?.uid || null
-});
+    // Crear una notificación global en Firestore
+    await addDoc(collection(db, 'notificaciones'), {
+      mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
+      timestamp: new Date().toISOString(),
+      productoId: docRef.id,
+      creadoPor: auth.currentUser.uid
+    });
 
-console.log("Datos del producto:", JSON.stringify(producto.value, null, 2));
-console.log("¿Formulario válido?:", formularioValido.value);
+    console.log("Producto creado exitosamente con imágenes:", imagenes);
 
-// Limpiar los campos después de crear el producto
-producto.value = {
-  nombre: '',
-  categoria: '',
-  nuevaCategoria: '',
-  descripcion: '',
-  fotos: [],
-  fechaApertura: null,
-  horaApertura: '',
-  fechaCierre: null,
-  horaCierre: '',
-  precioBase: null,
-  precioVentaInmediata: null
-};
+    // Limpiar el formulario
+    producto.value = {
+      nombre: '',
+      categoria: '',
+      nuevaCategoria: '',
+      descripcion: '',
+      fotos: [],
+      fechaApertura: null,
+      horaApertura: '',
+      fechaCierre: null,
+      horaCierre: '',
+      precioBase: null,
+      precioVentaInmediata: null
+    };
 
-// Limpiar input de archivos manualmente
-const fileInput = document.querySelector('ion-input[type="file"]');
-if (fileInput) {
-  fileInput.value = null;
-  const event = new Event('change', { bubbles: true });
-  fileInput.dispatchEvent(event);
-}
+    // Limpiar previsualizaciones
+    imagenesPreview.value = [];
 
+    // Limpiar input de archivos manualmente
+    const fileInput = document.querySelector('ion-input[type="file"]');
+    if (fileInput) {
+      fileInput.value = null;
+      const event = new Event('change', { bubbles: true });
+      fileInput.dispatchEvent(event);
+    }
 
+    // Redirigir a la página de mis publicaciones
     router.push('/mis-publicaciones');
   } catch (error) {
     console.error("Error al guardar producto:", error);
+  } finally {
+    cargandoImagenes.value = false;
   }
 };
-
 </script>
 
 <style scoped>
@@ -392,5 +549,12 @@ if (fileInput) {
 
 .botones-container ion-button {
   flex: 1;
+}
+
+.imagen-preview {
+  max-width: 150px; /* Limita el ancho máximo de la imagen */
+  max-height: 150px; /* Limita la altura máxima de la imagen */
+  object-fit: cover; /* Mantiene la relación de aspecto y recorta la imagen si es necesario */
+  margin: 5px; /* Añade un pequeño espacio entre las imágenes */
 }
 </style>
