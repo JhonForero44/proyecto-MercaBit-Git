@@ -1,107 +1,177 @@
 <template>
-    <ion-page>
-      <ion-header>
-        <ion-toolbar>
-          <ion-buttons slot="start">
-            <ion-menu-button />
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button />
+        </ion-buttons>
+        <ion-title>Mis Publicaciones</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <ion-list v-if="productos.length > 0">
+        <ion-item v-for="producto in productos" :key="producto.id">
+          <!-- Mostrar imagen a la izquierda -->
+          <ion-thumbnail slot="start">
+            <ion-img :src="producto.imagenes && producto.imagenes[0]?.url" />
+          </ion-thumbnail>
+
+          <!-- Detalles del producto -->
+          <ion-label>
+            <h2>{{ producto.nombre }}</h2>
+            <p>Categoría: {{ producto.categoria }}</p>
+            <p>Precio base: {{ producto.precioBase }} COP</p>
+            <p>Venta inmediata: {{ producto.precioVentaInmediata }} COP</p>
+            <p>Desde: {{ producto.fechaApertura }}</p>
+            <p>Hasta: {{ producto.fechaCierre }}</p>
+            <p>Publicado: {{ producto.creadoEn }}</p>
+
+            <!-- Mostrar el estado del producto -->
+            <p v-if="producto.estado === 'Vendido'" class="estado-vendido">Estado: Vendido</p>
+            <p v-else class="estado-disponible">Estado: Disponible</p>
+          </ion-label>
+
+          <ion-buttons slot="end">
+            <!-- Solo mostrar el botón "Vendido" si el producto no está vendido -->
+            <ion-button v-if="producto.estado !== 'Vendido'" color="success" @click="marcarComoVendido(producto.id)">
+              Vendido
+            </ion-button>
+            <ion-button color="danger" @click="eliminarProducto(producto.id)">
+              Borrar
+            </ion-button>
           </ion-buttons>
-          <ion-title>Mis Publicaciones</ion-title>
-        </ion-toolbar>
-      </ion-header>
-  
-      <ion-content class="ion-padding">
-  <ion-list v-if="productos.length > 0">
-    <ion-item v-for="producto in productos" :key="producto.id">
-      <ion-label>
-        <h2>{{ producto.nombre }}</h2>
-        <p>Categoría: {{ producto.categoria }}</p>
-        <p>Precio base: {{ producto.precioBase }} COP</p>
-        <p>Venta inmediata: {{ producto.precioVentaInmediata }} COP</p>
-        <p>Desde: {{ (producto.fechaApertura) }}</p>
-        <p>Hasta: {{ (producto.fechaCierre) }}</p>
-        <p>Publicado: {{(producto.creadoEn) }}</p>
-      </ion-label>
-      <ion-buttons slot="end">
-        <ion-button color="success" @click="marcarComoVendido(producto.id)">
-          Vendido
-        </ion-button>
-        <ion-button color="danger" @click="eliminarProducto(producto.id)">
-          Borrar
-        </ion-button>
-      </ion-buttons>
-    </ion-item>
-  </ion-list>
+        </ion-item>
+      </ion-list>
 
-  <ion-text v-else>
-    No tienes productos publicados aún.
-  </ion-text>
-</ion-content>
-    </ion-page>
-  </template>
-  
-  <script setup>
-  import {
-    IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonButtons,
-    IonMenuButton,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonText
-  } from '@ionic/vue';
-  import { ref, onMounted } from 'vue';
-  import { db, auth } from '../firebase/FirebaseConfig';
-  import { collection, query, where, getDocs } from 'firebase/firestore';
-  import { doc, deleteDoc } from "firebase/firestore";
-  
-  const productos = ref([]);
-  
-  const cargarMisProductos = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-  
-    try {
-      const q = query(
-        collection(db, 'products'),
-        where('userId', '==', user.uid)
-      );
-  
-      const querySnapshot = await getDocs(q);
-      productos.value = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error("Error al cargar productos:", error);
-    }
-  };
+      <ion-text v-else>
+        No tienes productos publicados aún.
+      </ion-text>
+    </ion-content>
+  </ion-page>
+</template>
 
-  // Eliminar producto de Firestore y del arreglo local
+<script setup>
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonMenuButton,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonText,
+  IonThumbnail,
+  IonImg
+} from '@ionic/vue';
+import { ref, onMounted } from 'vue';
+import { db, auth } from '../firebase/FirebaseConfig';
+import { collection, query, where, getDocs, getDoc, updateDoc, doc } from 'firebase/firestore';
+import { deleteDoc } from "firebase/firestore";
+import { storage } from '../firebase/FirebaseConfig'; // Importa Firebase Storage
+import { ref as storageRef, deleteObject } from 'firebase/storage'; // Importa las funciones necesarias para manejar Storage
+
+const productos = ref([]);
+
+const cargarMisProductos = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const q = query(
+      collection(db, 'products'),
+      where('userId', '==', user.uid)
+    );
+
+    const querySnapshot = await getDocs(q);
+    productos.value = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error al cargar productos:", error);
+  }
+};
+
+// Eliminar producto de Firestore y del arreglo local
 const eliminarProducto = async (id) => {
   try {
-    await deleteDoc(doc(db, "products", id));
-    productos.value = productos.value.filter(p => p.id !== id);
+    // Obtener el producto desde la base de datos
+    const productoRef = doc(db, "products", id);
+    const docSnap = await getDoc(productoRef);
+
+    if (docSnap.exists()) {
+      const productoData = docSnap.data();
+      
+      // Si el producto tiene imágenes, eliminar cada una de ellas de Firebase Storage
+      if (productoData.imagenes && productoData.imagenes.length > 0) {
+        for (const imagen of productoData.imagenes) {
+          const imagenRef = storageRef(storage, imagen.path); // Referencia de la imagen en Storage
+          
+          // Eliminar la imagen de Firebase Storage
+          await deleteObject(imagenRef);
+          console.log(`Imagen eliminada: ${imagen.path}`);
+        }
+      }
+      
+      // Eliminar el producto de Firestore
+      await deleteDoc(productoRef);
+      
+      // Actualizar el arreglo local de productos
+      productos.value = productos.value.filter(p => p.id !== id);
+      console.log('Producto eliminado correctamente');
+    }
   } catch (error) {
     console.error("Error al eliminar producto:", error);
   }
 };
 
-// Marcar como vendido (puedes borrar o hacer otra lógica)
+// Marcar como vendido (actualizar estado y UI)
 const marcarComoVendido = async (id) => {
   try {
-    await deleteDoc(doc(db, "products", id));
-    productos.value = productos.value.filter(p => p.id !== id);
+    const productoRef = doc(db, "products", id);
+    
+    // Actualizamos el estado a "Vendido"
+    await updateDoc(productoRef, {
+      estado: "Vendido"
+    });
+
+    // Actualizar el producto en el arreglo local
+    productos.value = productos.value.map(p => 
+      p.id === id ? { ...p, estado: "Vendido" } : p
+    );
   } catch (error) {
     console.error("Error al marcar como vendido:", error);
   }
 };
-  
-  onMounted(() => {
-    cargarMisProductos();
-  });
-  </script>
-  
+
+onMounted(() => {
+  cargarMisProductos();
+});
+</script>
+
+<style scoped>
+ion-thumbnail {
+  width: 100px;
+  height: 100px;
+  margin-right: 10px;
+}
+
+ion-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.estado-vendido {
+  color: green;
+  font-weight: bold;
+}
+
+.estado-disponible {
+  color: orange;
+}
+</style>
