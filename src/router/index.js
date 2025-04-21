@@ -26,7 +26,10 @@ const routes = [
       {
         path: 'home',
         component: () => import('@/views/HomePage.vue'),
-        meta: { requiresAuth: true },
+        meta:
+        { requiresAuth: true,
+          hideLayout: true
+        },
       },
       {
         path: 'buscar',
@@ -65,6 +68,8 @@ const routes = [
         path: '/terminos-condiciones',
         component: () => import('@/views/Terminos-condiciones.vue'),
       },
+      
+
       /*
       {
         path: 'notificaciones',
