@@ -26,7 +26,10 @@ const routes = [
       {
         path: 'home',
         component: () => import('@/views/HomePage.vue'),
-        meta: { requiresAuth: true },
+        meta:
+        { requiresAuth: true,
+          hideLayout: true
+        },
       },
       {
         path: 'buscar',
@@ -75,7 +78,7 @@ const routes = [
         path: '/mi-cuenta',
         component: () => import('@/views/MiCuenta.vue'),
         meta: { requiresAuth: true },
-      }     
+      }
       /*
       {
         path: 'notificaciones',
