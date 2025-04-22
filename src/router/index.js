@@ -78,7 +78,17 @@ const routes = [
         path: '/mi-cuenta',
         component: () => import('@/views/MiCuenta.vue'),
         meta: { requiresAuth: true },
-      }
+      },
+      {
+        path: '/Evaluate',
+        name: 'Evaluate',
+        component: () => import('@/views/Evaluate.vue'),
+      },      
+      {
+        path: '/Miscompras',
+        name: 'MisCompras',
+        component: () => import('@/views/MisCompras.vue')
+      },
       /*
       {
         path: 'notificaciones',
