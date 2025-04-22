@@ -68,7 +68,17 @@ const routes = [
         path: '/terminos-condiciones',
         component: () => import('@/views/Terminos-condiciones.vue'),
       },
+      {
+        path: '/Evaluate',
+        name: 'Evaluate',
+        component: () => import('@/views/Evaluate.vue')
+      },
       
+      {
+        path: '/Miscompras',
+        name: 'MisCompras',
+        component: () => import('@/views/MisCompras.vue')
+      },
 
       /*
       {
