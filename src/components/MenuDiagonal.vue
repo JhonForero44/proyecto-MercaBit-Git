@@ -19,7 +19,11 @@
             <ion-icon :icon="notificationsOutline" slot-v="start" />
             <ion-label>Notificaciones</ion-label>
           </ion-item>
-          <ion-item router-link="/mis-compras" router-direction="root">
+          <ion-item router-link="/Evaluate" router-direction="root">
+            <ion-icon :icon="mdi-checkbox-marked-outline" slot-v="start" />
+            <ion-label>Evaluacion</ion-label>
+          </ion-item>
+          <ion-item router-link="/MisCompras" router-direction="root">
             <ion-icon :icon="cartOutline" slot-v="start" />
             <ion-label>Mis Compras</ion-label>
           </ion-item>
@@ -27,6 +31,7 @@
             <ion-icon :icon="checkmarkCircleOutline" slot-v="start" />
             <ion-label>Ofertas realizadas</ion-label>
           </ion-item>
+
           <ion-item router-link="/agregar-producto" router-direction="root">
             <ion-icon :icon="addOutline" slot-v="start" />
             <ion-label>Agregar producto</ion-label>
