@@ -89,6 +89,11 @@ const routes = [
         name: 'MisCompras',
         component: () => import('@/views/MisCompras.vue')
       },
+      {
+        path: '/ofertas-realizadas',
+        name: 'MisOfertas',
+        component: () => import('@/views/OfertasRealizadas.vue')
+      },
       /*
       {
         path: 'notificaciones',
@@ -100,7 +105,6 @@ const routes = [
         component: () => import('@/views/MisVentasPage.vue'),
         meta: { requiresAuth: true },
       },
-      
       {
         path: 'categorias',
         component: () => import('@/views/Categorias.vue'),
