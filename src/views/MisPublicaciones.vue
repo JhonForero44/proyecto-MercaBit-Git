@@ -8,40 +8,44 @@
         <ion-title>Mis Publicaciones</ion-title>
       </ion-toolbar>
     </ion-header>
-
+    
     <ion-content class="ion-padding">
       <ion-list v-if="productos.length > 0">
-        <ion-item v-for="producto in productos" :key="producto.id">
-          <!-- Mostrar imagen a la izquierda -->
-          <ion-thumbnail slot="start">
-            <ion-img :src="producto.imagenes && producto.imagenes[0]?.url" />
-          </ion-thumbnail>
+        <ion-card v-for="producto in productos" :key="producto.id" class="producto-card">
+          <!-- Mostrar imagen parte superior-->
+          <div class="imagen-container">
+            <ion-img :src="producto.imagenes && producto.imagenes[0]?.url" class="producto-imagen" />
+          </div>
 
           <!-- Detalles del producto -->
-          <ion-label>
-            <h2>{{ producto.nombre }}</h2>
-            <p>Categoría: {{ producto.categoria }}</p>
-            <p>Precio base: {{ producto.precioBase }} COP</p>
-            <p>Venta inmediata: {{ producto.precioVentaInmediata }} COP</p>
-            <p>Desde: {{ producto.fechaApertura }}</p>
-            <p>Hasta: {{ producto.fechaCierre }}</p>
-            <p>Publicado: {{ producto.creadoEn }}</p>
-
-            <!-- Mostrar el estado del producto -->
-            <p v-if="producto.estado === 'Vendido'" class="estado-vendido">Estado: Vendido</p>
-            <p v-else class="estado-disponible">Estado: Disponible</p>
-          </ion-label>
-
-          <ion-buttons slot="end">
+          <ion-card-content>
+            <ion-card-title>
+              {{ producto.nombre }}
+            </ion-card-title>
+            <ion-text>
+              <p>Categoría: {{ producto.categoria }}</p>
+              <p>Precio base: {{ producto.precioBase }} COP</p>
+              <p>Venta inmediata: {{ producto.precioVentaInmediata }} COP</p>
+              <p>Desde: {{ producto.fechaApertura }}</p>
+              <p>Hasta: {{ producto.fechaCierre }}</p>
+              <p>Publicado: {{ producto.creadoEn }}</p>
+  
+              <!-- Mostrar el estado del producto -->
+              <p v-if="producto.estado === 'Vendido'" class="estado-vendido">Estado: Vendido</p>
+              <p v-else class="estado-disponible">Estado: Disponible</p>
+            </ion-text>
+            <!--Botones en la parte inferior-->
             <!-- Solo mostrar el botón "Vendido" si el producto no está vendido -->
-            <ion-button v-if="producto.estado !== 'Vendido'" color="success" @click="marcarComoVendido(producto.id)">
-              Vendido
-            </ion-button>
-            <ion-button color="danger" @click="eliminarProducto(producto.id)">
-              Borrar
-            </ion-button>
-          </ion-buttons>
-        </ion-item>
+            <div class="botones-container">
+              <ion-button v-if="producto.estado !== 'Vendido'" color="success" @click="marcarComoVendido(producto.id)">
+                Vendido
+              </ion-button>
+              <ion-button color="danger" @click="eliminarProducto(producto.id)">
+                Borrar
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
       </ion-list>
 
       <ion-text v-else>
@@ -64,8 +68,11 @@ import {
   IonItem,
   IonLabel,
   IonText,
-  IonThumbnail,
-  IonImg
+  IonImg,
+  IonCard,
+  IonCardContent,
+  IonCardTitle,
+  IonButton
 } from '@ionic/vue';
 import { ref, onMounted } from 'vue';
 import { db, auth } from '../firebase/FirebaseConfig';
@@ -154,13 +161,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
-ion-thumbnail {
-  width: 100px;
-  height: 100px;
-  margin-right: 10px;
+.producto-card
+{
+  margin-bottom: 20px;
+  width: 100%;
 }
 
-ion-img {
+.imagen-container {
+  width: auto;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.producto-imagen {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -173,5 +189,22 @@ ion-img {
 
 .estado-disponible {
   color: orange;
+}
+
+.botones-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.boton-accion {
+  flex: 1;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 576px) {
+  .botones-container {
+    flex-direction: column;
+  }
 }
 </style>
