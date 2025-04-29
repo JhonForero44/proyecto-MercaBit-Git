@@ -29,12 +29,12 @@
         </div>
 
         <div class="estadisticas">
-          <p>VISITAS: {{ tiempoRestante }} </p>
+          <p>TIEMPO RESTANTE: <br> {{ tiempoRestante }} </p>
           <p>OFERTAS: {{ numeroOfertas }}</p>
         </div>
 
         <div class="precios">
-          <p class="precio-actual">Oferta Actual: <strong> {{ formatoMoneda(producto.precio_actual) }} </strong> (COP)
+          <p class="precio-actual">Oferta Actual: <strong> {{ formatoMoneda(producto.precioBase) }} </strong> (COP)
           </p>
           <p class="venta-inmediata">Cierre inmediato: <strong> {{ formatoMoneda(producto.precioVentaInmediata) }}
             </strong> (COP)</p>
@@ -86,7 +86,7 @@ onMounted(async () => {
 
   if (docSnap.exists()) {
     producto.value = docSnap.data()
-    ofertaSugerida.value = Number(producto.value.precio_actual || 0) + Number(incremento.value);
+    ofertaSugerida.value = Number(producto.value.precioBase || 0) + Number(incremento.value);
     actualizarTiempoRestante()
     setInterval(actualizarTiempoRestante, 60000)
     numeroOfertas.value = await obtenerNumeroDeOfertas(id)
