@@ -32,11 +32,6 @@ const routes = [
         },
       },
       {
-        path: 'buscar',
-        component: () => import('@/views/Buscar.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
         path: 'agregar-producto',
         component: () => import('@/views/AgregarProductoPage.vue'),
         meta:
