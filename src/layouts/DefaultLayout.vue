@@ -1,6 +1,7 @@
 <template>
   <ion-app>
-    <ion-header>
+    <MenuDiagonal />
+    <ion-header v-if="!route.meta.hideLayout">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-menu-button />
@@ -8,30 +9,23 @@
         <ion-title>{{ pageTitle }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <!-- Menú lateral -->
-    <MenuDiagonal />
-    <ion-router-outlet id="main-content"></ion-router-outlet>
-    <!-- Contenedor principal -->
-    <ion-page id="main-content">
-      <ion-router-outlet />
-      <Footer  v-if="!route.meta.hideLayout" />
-    </ion-page>
+    <ion-router-outlet id="main-content" />
+    <Footer v-if="!route.meta.hideLayout" />
   </ion-app>
 </template>
 
 <script setup>
-import { IonApp, IonMenu, IonPage, IonRouterOutlet } from '@ionic/vue';
+import { IonApp, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonRouterOutlet } from '@ionic/vue'
 import MenuDiagonal from '@/components/MenuDiagonal.vue'
-import { useRoute } from 'vue-router';
 import Footer from '@/components/Footer.vue'
+import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 
-const route = useRoute();
+const route = useRoute()
 
-// Mapeo de rutas a títulos
 const pageTitle = computed(() => {
   const titles = {
-    '/login': 'Inicio de Sesion',
+    '/login': 'Inicio de Sesión',
     '/home': 'MercaBit - Productos',
     '/registro': 'Registro',
     '/recuperar-contrasena': 'Recuperar Contraseña',
@@ -41,10 +35,9 @@ const pageTitle = computed(() => {
     '/mis-publicaciones': 'Mis Publicaciones',
     '/agregar-producto': 'Agregar Producto',
     '/categorias': 'Categorías',
-    '/informacion-personal': 'Informacion Personal',
+    '/informacion-personal': 'Información Personal',
     '/mis-compras': 'Mis Compras',
   }
   return titles[route.path] || ''
 })
-
 </script>
