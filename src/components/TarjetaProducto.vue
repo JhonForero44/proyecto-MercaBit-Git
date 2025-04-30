@@ -16,6 +16,13 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { 
+  IonCard, 
+  IonCardHeader, 
+  IonCardSubtitle, 
+  IonCardContent, 
+  IonCardTitle 
+} from '@ionic/vue';
 
 const router = useRouter(); 
 
