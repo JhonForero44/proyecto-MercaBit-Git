@@ -4,18 +4,22 @@
       <div v-if="producto" class="contenedor">
         <h2 class="titulo">{{ producto.nombre }}</h2>
 
-        <ion-slides pager="true" class="slider" v-if="producto.imagenes && producto.imagenes.length">
-          <ion-slide v-for="(img, index) in producto.imagenes" :key="index">
+        <!-- Swiper.js -->
+        <swiper :slides-per-view="1" :space-between="10" :pagination="{ clickable: true }" :loop="true" class="slider"
+          v-if="producto.imagenes && producto.imagenes.length">
+          <swiper-slide v-for="(img, index) in producto.imagenes" :key="index">
             <img :src="img.url" class="imagen-slide" />
-          </ion-slide>
-        </ion-slides>
+          </swiper-slide>
+        </swiper>
 
         <!-- Imagen de respaldo si no hay imágenes -->
         <img v-else :src="producto.imgUrl || '/img/imagen-prueba.jpg'" class="imagen-slide" />
 
-        <p>Descripcion detallada:</p>
-        <div class="descripcion">
-          <p>{{ producto.descripcion }}</p>
+        <div class="descripcion-container">
+          <p class="descripcion-titulo">Descripción detallada:</p>
+          <div class="descripcion">
+            <p>{{ producto.descripcion }}</p>
+          </div>
         </div>
 
         <div class="cuenta-regresiva">
@@ -71,6 +75,19 @@ import { db } from '@/firebase/FirebaseConfig'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 import { actualizarProducto } from '@/services/productoService';
+import {
+  IonButton,
+  IonContent,
+  IonPage,
+  IonInput
+} from '@ionic/vue';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import SwiperCore from 'swiper';
+import { Pagination } from 'swiper/modules';
+
+SwiperCore.use([Pagination]);
 
 const route = useRoute()
 const producto = ref(null)
@@ -253,20 +270,38 @@ ion-button {
 
 .slider {
   margin-bottom: 16px;
+  max-height: 250px;
+  overflow: hidden;
 }
 
 .imagen-slide {
   width: 100%;
-  height: 180px;
+  height: auto;
+  max-height: 250px;
   object-fit: cover;
-  border-radius: 12px;
+}
+
+/* Nuevo contenedor para agrupar el título y la descripción */
+.descripcion-container {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+/* Estilo para el título de la descripción */
+.descripcion-titulo {
+  margin: 0 0 5px 0; /* Elimina los márgenes por defecto y agrega un pequeño margen inferior */
+  font-weight: 500;
 }
 
 .descripcion {
   border-radius: 10px;
   padding: 12px;
-  margin-bottom: 16px;
   border: 2px solid #000000;
+  margin: 0; /* Elimina márgenes por defecto */
+}
+
+.descripcion p {
+  margin: 0; /* Elimina márgenes por defecto del párrafo dentro de descripción */
 }
 
 .cuenta-regresiva {
