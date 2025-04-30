@@ -43,7 +43,7 @@
       :is-open="mostrarAlerta"
       header="Opciones de Notificación"
       message="¿Qué te gustaría hacer?"
-      :buttons="[
+      :buttons="[ 
         {
           text: 'Ir a la Publicación',
           handler: () => irAlaPublicacion(seleccionadaNotificacion)
@@ -62,7 +62,6 @@
     ></ion-alert>
   </ion-page>
 </template>
-
 
 <script setup>
 import {
@@ -84,7 +83,7 @@ import {
 
 import { onMounted, ref } from 'vue';
 import { db } from '../firebase/FirebaseConfig';
-import { collection, query, where, onSnapshot, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth'; 
 import { useRouter } from 'vue-router';
 
@@ -161,9 +160,7 @@ const resetAlerta = () => {
 const cancelarOpciones = () => {
   mostrarAlerta.value = false; // Simplemente cerramos el alerta
 };
-
 </script>
-
 
 <style scoped>
 .notificaciones-lista {

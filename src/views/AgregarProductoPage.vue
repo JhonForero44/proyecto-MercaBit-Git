@@ -489,13 +489,16 @@ const crearProducto = async () => {
     // Actualizar el documento en Firestore con las referencias de imágenes
     await updateDoc(docRef, updateData);
 
+    
     // Crear una notificación global en Firestore
-    await addDoc(collection(db, 'notificaciones'), {
-      mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
-      timestamp: new Date().toISOString(),
-      productoId: docRef.id,
-      creadoPor: auth.currentUser.uid
-    });
+await addDoc(collection(db, 'notificaciones'), {
+  mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
+  timestamp: new Date().toISOString(),
+  productoId: docRef.id,
+  userId: auth.currentUser?.uid  // Asegúrate de incluir el UID del usuario
+});
+
+
 
     console.log("Producto creado exitosamente con imágenes:", imagenes);
 
