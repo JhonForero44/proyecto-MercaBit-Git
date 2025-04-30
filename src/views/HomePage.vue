@@ -12,11 +12,7 @@
     <ion-content>
       <ion-grid>
         <ion-row>
-          <ion-col
-            v-for="product in productsOrdenados"
-            :key="product.id"
-            size="12" size-md="6" size-lg="4"
-          >
+          <ion-col v-for="product in productsOrdenados" :key="product.id" size="12" size-md="6" size-lg="4">
             <TarjetaProducto :producto="product" />
           </ion-col>
         </ion-row>
@@ -27,10 +23,18 @@
 
 <script setup>
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle,
-  IonContent, IonCard, IonCardHeader, IonCardTitle,
-  IonCardSubtitle, IonCardContent, IonGrid, IonRow, IonCol
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonMenuButton,
+  IonButtons,
 } from '@ionic/vue'
+
 import { onMounted, ref, computed } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase/FirebaseConfig'
