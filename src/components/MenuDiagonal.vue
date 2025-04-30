@@ -16,7 +16,7 @@
             <ion-label>Notificaciones</ion-label>
           </ion-item>
           <ion-item router-link="/Evaluate" router-direction="root">
-            <ion-icon :icon="mdi-checkbox-marked-outline" slot-v="start" />
+            <ion-icon :icon="clipboardOutline" slot-v="start" />
             <ion-label>Evaluacion</ion-label>
           </ion-item>
           <ion-item router-link="/MisCompras" router-direction="root">
@@ -81,6 +81,7 @@ import {
   homeOutline,
   searchOutline,
   notificationsOutline,
+  clipboardOutline,
   cartOutline,
   checkmarkCircleOutline,
   folderOutline,
