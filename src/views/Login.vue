@@ -42,7 +42,8 @@ export default {
     IonCard,
     IonInput,
     IonButton,
-    IonText
+    IonText,
+    IonInputPasswordToggle
   },
   setup() {
     const email = ref("");
