@@ -3,6 +3,9 @@
 
 .env
 /android/
+/resources/
+/icons/
+/public/manifest.webmanifest
 
 *~
 *.sw[mnpcod]
