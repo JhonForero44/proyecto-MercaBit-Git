@@ -37,10 +37,21 @@ import '@ionic/vue/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
+/*Configuración de la barra de estado*/
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
+
 const app = createApp(App)
   .use(IonicVue)
   .use(router);
 
 router.isReady().then(() => {
+  /* ✅ Cotapiable en plataforma nativa de Android */
+  if (Capacitor.isNativePlatform()) {
+    StatusBar.setOverlaysWebView({ overlay: false });
+    StatusBar.setBackgroundColor({ color: '#1e1e1e' }); // Ajusta al color de tu header
+    StatusBar.setStyle({ style: Style.Light }); // Cambia a Style.Dark si usas fondo claro
+  }
+
   app.mount('#app');
 });
