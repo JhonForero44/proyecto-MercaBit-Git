@@ -9,17 +9,19 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding container">
-      <ion-card class="login-card">
-        <div class="logo">
-          <img src="/img/Logo.png" alt="Logo">
-        </div>
-        <h2 class="textTitulo">Merca<span class="highlight">Bit</span></h2>
-        <ion-text class="version-text">Versión 1.0</ion-text>
-        <ion-text class="footer-text">Copyright ® 2025 MercaBit</ion-text>
-        <ion-text class="footer-text">Cali, Colombia</ion-text>
-        <ion-button class="DesignButton-TermCond" @click="goToTermCond">Términos y Condiciones</ion-button>
-      </ion-card>
+    <ion-content class="ion-padding">
+      <div class="container">
+        <ion-card class="login-card">
+          <div class="logo">
+            <img src="/img/Logo.png" alt="Logo">
+          </div>
+          <h2 class="textTitulo">Merca<span class="highlight">Bit</span></h2>
+          <ion-text class="version-text">Versión 1.0</ion-text>
+          <ion-text class="footer-text">Copyright ® 2025 MercaBit</ion-text>
+          <ion-text class="footer-text">Cali, Colombia</ion-text>
+          <ion-button class="DesignButton-TermCond" @click="goToTermCond">Términos y Condiciones</ion-button>
+        </ion-card>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -51,9 +53,8 @@ const goToTermCond = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f1f1f1;
-  padding: 0;
+  min-height: 100%;
+  padding: 20px 0;
 }
 
 .login-card {
@@ -64,6 +65,7 @@ const goToTermCond = () => {
   background: white;
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  margin: auto;
 }
 
 .version-text {
