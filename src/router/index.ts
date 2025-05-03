@@ -93,6 +93,12 @@ const routes = [
         path: '/categorias',
         component: () => import('@/views/Categorias.vue'),
         meta: { requiresAuth: true },
+      },
+      {
+        path: '/categoria/:categoriaId',
+        name: 'ProductosPorCategoria',
+        component: () => import('@/views/ProductosPorCategoria.vue'),
+        meta: { requiresAuth: true },
       }
       /*
       {
