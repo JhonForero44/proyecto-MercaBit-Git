@@ -30,6 +30,7 @@ export const registerUser = async (name, cedula, email, password) => {
       name: String(name),
       cedula: String(cedula),
       email: String(email),
+      saldo: 500000, // Saldo inicial por defecto
       createdAt: new Date(),
       lastLogin: new Date(),
     });
