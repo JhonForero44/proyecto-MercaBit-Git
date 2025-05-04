@@ -30,6 +30,11 @@
             <ion-label class="label-text" position="stacked">Correo:</ion-label>
             <ion-input v-model="correo" placeholder="Tu correo electrónico" readonly></ion-input>
           </ion-item>
+
+          <ion-item class="form-item" lines="none">
+            <ion-label class="label-text" position="stacked">Saldo:</ion-label>
+            <ion-input v-model="saldo" placeholder="Tu Saldo" readonly></ion-input>
+          </ion-item>s
         </div>
       </div>
     </ion-content>
@@ -59,6 +64,7 @@ const nombre = ref('');
 const cc = ref('');
 const correo = ref('');
 const foto = ref('');
+const saldo = ref('');
 
 // Cargar info del usuario desde Firestore
 onMounted(async () => {
@@ -73,6 +79,7 @@ onMounted(async () => {
       cc.value = data.cedula || '';
       correo.value = data.email || '';
       foto.value = data.photoURL || 'https://via.placeholder.com/100';
+      saldo.value = data.saldo;
     } else {
       console.log('No existe el documento del usuario');
     }
