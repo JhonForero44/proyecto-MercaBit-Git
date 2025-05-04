@@ -74,7 +74,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/FirebaseConfig'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
-import { actualizarProducto } from '@/services/productoService';
+import { actualizarProducto, actualizarCamposProducto } from '@/services/productoService';
 import {
   IonButton,
   IonContent,
@@ -204,7 +204,7 @@ async function CrearOferta() {
       es_mas_alta: false
     }
 
-    await addDoc(collection(db, 'ofertas'), nuevaOferta)
+    await addDoc(collection(db, 'ofertas'), nuevaOferta);
     await actualizarProducto(route.params.id, ofertaSugerida.value);
 
     // Incrementar el número de ofertas del producto
@@ -213,11 +213,12 @@ async function CrearOferta() {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      const numeroActual = data.precio_actual?.numero_ofertas || 0;
+      const numeroActual = data.numero_ofertas ? parseInt(data.numero_ofertas) : 0; // Asegúrate de que sea un número
 
-      await actualizarProducto(route.params.id, {
-        'precio_actual.numero_ofertas': numeroActual + 1
+      await actualizarCamposProducto(route.params.id, {
+        numero_ofertas: numeroActual + 1
       });
+
     }
 
     alert('¡Oferta registrada con éxito!')
@@ -233,7 +234,7 @@ async function obtenerNumeroDeOfertas(productoId) {
 
   if (productoSnap.exists()) {
     const data = productoSnap.data();
-    return data.precio_actual?.numero_ofertas || 0;
+    return data.numero_ofertas || 0;
   } else {
     console.log("Producto no encontrado.");
     return 0;
@@ -289,7 +290,8 @@ ion-button {
 
 /* Estilo para el título de la descripción */
 .descripcion-titulo {
-  margin: 0 0 5px 0; /* Elimina los márgenes por defecto y agrega un pequeño margen inferior */
+  margin: 0 0 5px 0;
+  /* Elimina los márgenes por defecto y agrega un pequeño margen inferior */
   font-weight: 500;
 }
 
@@ -297,11 +299,13 @@ ion-button {
   border-radius: 10px;
   padding: 12px;
   border: 2px solid #000000;
-  margin: 0; /* Elimina márgenes por defecto */
+  margin: 0;
+  /* Elimina márgenes por defecto */
 }
 
 .descripcion p {
-  margin: 0; /* Elimina márgenes por defecto del párrafo dentro de descripción */
+  margin: 0;
+  /* Elimina márgenes por defecto del párrafo dentro de descripción */
 }
 
 .cuenta-regresiva {
