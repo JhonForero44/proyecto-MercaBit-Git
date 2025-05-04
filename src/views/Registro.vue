@@ -49,7 +49,7 @@ import { registerUser } from "@/services/authService";
 
 export default {
   components: {
-    IonPage, IonContent, IonCard, IonInput, IonButton, IonText, IonSpinner
+    IonPage, IonContent, IonCard, IonInput, IonButton, IonText, IonSpinner, IonInputPasswordToggle
   },
   setup() {
     const name = ref("");
