@@ -15,7 +15,7 @@
         </div>
   
         <div v-else class="productos-container">
-          <TarjetaProducto v-for="producto in productos" :key="producto.id" :producto="producto" />
+          <TarjetaProducto v-for="producto in productosDisponibles" :key="producto.id" :producto="producto" />
         </div>
       </IonContent>
     </IonPage>
@@ -23,7 +23,7 @@
   
   <script setup>
   import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonLoading } from '@ionic/vue'
-  import { ref, onMounted } from 'vue'
+  import { ref, onMounted, computed } from 'vue'
   import { useRoute } from 'vue-router'
   import TarjetaProducto from '@/components/TarjetaProducto.vue'
   import { obtenerProductosPorCategoria } from '@/services/productoService'
@@ -34,6 +34,14 @@
   const isLoading = ref(true)
   const route = useRoute()
   
+  const productosDisponibles = computed(() =>
+  productos.value.filter(producto => {
+    const ahora = new Date()
+    const fechaCierre = new Date(producto.fechaCierre)
+    return producto.estado === 'Disponible' && fechaCierre > ahora
+    })
+  )
+
   onMounted(async () => {
     const categoriaId = route.params.categoriaId
     try {
