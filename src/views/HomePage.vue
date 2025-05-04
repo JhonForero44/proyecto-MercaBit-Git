@@ -50,12 +50,15 @@ onMounted(async () => {
   }))
 })
 
-// Aquí agregamos el ordenamiento por fecha
 const productsOrdenados = computed(() => {
-  return [...products.value].sort((a, b) => {
-    const fechaA = new Date(a.fechaCierre)
-    const fechaB = new Date(b.fechaCierre)
-    return fechaA - fechaB // Menor primero: los que cierran más pronto
-  })
+  const ahora = new Date()
+
+  return products.value
+    .filter(product => {
+      const fechaCierre = new Date(product.fechaCierre)
+      return product.estado === 'Disponible' && fechaCierre > ahora
+    })
+    .sort((a, b) => new Date(a.fechaCierre) - new Date(b.fechaCierre))
 })
+
 </script>
