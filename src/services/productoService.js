@@ -2,13 +2,20 @@ import { db } from '../firebase/FirebaseConfig'; // Importa tu configuración de
 import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { getAuth } from 'firebase/auth';
 
-// Función para actualizar el precio de un producto
 export const actualizarProducto = async (productoId, nuevoPrecio) => {
   try {
-    const productoRef = doc(db, "products", productoId); // Obtén la referencia del producto
+    const nuevoPrecioNumerico = parseFloat(nuevoPrecio);
+
+    if (isNaN(nuevoPrecioNumerico)) {
+      console.error('El precio proporcionado no es válido', nuevoPrecio);
+      return;
+    }
+
+    const productoRef = doc(db, "products", productoId);
     await updateDoc(productoRef, {
-      precio_actual: nuevoPrecio, // Actualiza el campo de precio
+      precioBase: nuevoPrecioNumerico,
     });
+
     console.log('Producto actualizado con éxito');
   } catch (error) {
     console.error('Error al actualizar el producto: ', error);
@@ -37,3 +44,13 @@ export async function obtenerProductosPorCategoria(categoriaNombre) {
     throw error;
   }
 }
+
+export const actualizarCamposProducto = async (productoId, campos) => {
+  try {
+    const productoRef = doc(db, "products", productoId);
+    await updateDoc(productoRef, campos);
+    console.log('Campos del producto actualizados con éxito');
+  } catch (error) {
+    console.error('Error al actualizar los campos del producto: ', error);
+  }
+};
