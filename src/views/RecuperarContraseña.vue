@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText } from '@ionic/vue';
+import { IonPage, IonContent, IonCard, IonInput, IonButton, IonText, IonSpinner } from '@ionic/vue';
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { resetPassword } from "@/services/authService";
@@ -47,7 +47,8 @@ export default {
     IonCard,
     IonInput,
     IonButton,
-    IonText
+    IonText,
+    IonSpinner
   },
   setup() {
     const router = useRouter();
