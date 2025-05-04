@@ -56,7 +56,9 @@ export default {
 
       if (response.success) {
         console.log("Usuario autenticado:", response.user);
-        router.push("/home");
+        router.push({ path: '/home' }).then(() => {
+          window.location.reload();
+        });
       } else {
         if (response.resend) {
           errorMessage.value = response.message;
