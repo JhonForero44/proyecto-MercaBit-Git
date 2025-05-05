@@ -6,6 +6,7 @@
 /resources/
 /icons/
 /public/manifest.webmanifest
+/functions/node_modules/
 
 *~
 *.sw[mnpcod]
