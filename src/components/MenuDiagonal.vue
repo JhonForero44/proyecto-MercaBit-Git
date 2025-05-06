@@ -94,28 +94,39 @@ import {
 import { logoutUser } from '@/services/authService';
 import { useRouter } from 'vue-router';
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 
 const router = useRouter();
 const userName = ref('Usuario');
 const userPhoto = ref('/img/User.jpg'); // Default photo
+let unsubscribeUserListener = null; // Para manejar la suscripción a Firestore
 
-const fetchUserData = async (uid) => {
+// Listener de cambios en tiempo real para el usuario
+const setupUserDataListener = (uid) => {
   try {
     const db = getFirestore();
     const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      userName.value = data.name;
-      if (data.photoURL) {
-        userPhoto.value = data.photoURL;
+    
+    // Usar onSnapshot en lugar de getDoc para escuchar cambios en tiempo real
+    unsubscribeUserListener = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        userName.value = data.name;
+        // Añadimos un timestamp a la URL para evitar caché del navegador
+        // cuando la URL es la misma pero la imagen ha cambiado
+        if (data.photoURL) {
+          // Si la URL ya contiene un parámetro de consulta, añadimos & en lugar de ?
+          const separator = data.photoURL.includes('?') ? '&' : '?';
+          userPhoto.value = `${data.photoURL}${separator}t=${Date.now()}`;
+        }
       }
-    }
+    }, (error) => {
+      console.error('Error al escuchar cambios del usuario:', error);
+    });
   } catch (err) {
-    console.error('Error al obtener datos del usuario:', err);
+    console.error('Error al configurar el listener:', err);
   }
 };
 
@@ -123,9 +134,21 @@ onMounted(() => {
   const auth = getAuth();
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      fetchUserData(user.uid);
+      setupUserDataListener(user.uid);
+    } else {
+      // Resetear valores si no hay usuario
+      userName.value = 'Usuario';
+      userPhoto.value = '/img/User.jpg';
     }
   });
+});
+
+// Limpieza del listener cuando el componente se desmonta
+onUnmounted(() => {
+  // Cancelar la suscripción a Firestore cuando el componente se desmonta
+  if (unsubscribeUserListener) {
+    unsubscribeUserListener();
+  }
 });
 
 const logout = async () => {
@@ -220,6 +243,7 @@ ion-icon {
   border: 2px solid white;
   margin-right: 10px;
   /* Espacio entre la imagen y el texto */
+  object-fit: cover; /* Para que la imagen se ajuste correctamente */
 }
 
 .user-name {
