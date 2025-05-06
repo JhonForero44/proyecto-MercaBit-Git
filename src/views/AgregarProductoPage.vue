@@ -457,12 +457,43 @@ const crearProducto = async () => {
       ? producto.value.nuevaCategoria 
       : producto.value.categoria;
 
-    const fechaAperturaCompleta = new Date(producto.value.fechaApertura);
-    fechaAperturaCompleta.setHours(parseInt(producto.value.horaApertura), 0, 0);
+    // Formatear las fechas sin convertir a UTC (evitar toISOString)
+    // Crear objetos Date para manipulación
+    const fechaAperturaObj = new Date(producto.value.fechaApertura);
+    fechaAperturaObj.setHours(parseInt(producto.value.horaApertura), 0, 0);
+    
+    const fechaCierreObj = new Date(producto.value.fechaCierre);
+    fechaCierreObj.setHours(parseInt(producto.value.horaCierre), 0, 0);
+    
+    // Formatear fechas para almacenamiento manteniendo la zona horaria local
+    // Formato: "YYYY-MM-DDTHH:MM:SS.sss" (sin la Z del final que indica UTC)
+    const formatearFechaHora = (fecha) => {
+      const año = fecha.getFullYear();
+      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+      const dia = String(fecha.getDate()).padStart(2, '0');
+      const hora = String(fecha.getHours()).padStart(2, '0');
+      const minutos = String(fecha.getMinutes()).padStart(2, '0');
+      const segundos = String(fecha.getSeconds()).padStart(2, '0');
+      
+      // Formato para almacenamiento en Firebase (mantiene compatibilidad con el resto del sistema)
+      return `${año}-${mes}-${dia}T${hora}:${minutos}:${segundos}.000`;
+    };
+    
+    // Formato simple para visualización
+    const formatearFechaHoraSimple = (fecha) => {
+      const dia = String(fecha.getDate()).padStart(2, '0');
+      const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+      const año = fecha.getFullYear();
+      const hora = String(fecha.getHours()).padStart(2, '0');
+      const minutos = String(fecha.getMinutes()).padStart(2, '0');
+      
+      return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    };
 
-    const fechaCierreCompleta = new Date(producto.value.fechaCierre);
-    fechaCierreCompleta.setHours(parseInt(producto.value.horaCierre), 0, 0);
-
+    // Generar los formatos de fecha requeridos
+    const fechaAperturaFormateada = formatearFechaHora(fechaAperturaObj);
+    const fechaCierreFormateada = formatearFechaHora(fechaCierreObj);
+    
     // Primero crear el documento en Firestore para obtener el ID
     const docRef = await addDoc(collection(db, 'products'), {
       userId: auth.currentUser.uid,
@@ -471,10 +502,10 @@ const crearProducto = async () => {
       categoria: categoriaFinal,
       precioBase: producto.value.precioBase,
       precioVentaInmediata: producto.value.precioVentaInmediata,
-      fechaApertura: fechaAperturaCompleta.toISOString(),
-      fechaCierre: fechaCierreCompleta.toISOString(),
+      fechaApertura: fechaAperturaFormateada,
+      fechaCierre: fechaCierreFormateada,
       creadoEn: new Date().toISOString(),
-      estado: "Disponible",  // Aquí agregamos el campo `estado` con valor "Disponible"
+      estado: "Disponible",
       imagenes: [] // Inicialmente vacío, se actualizará después
     });
 
@@ -489,16 +520,13 @@ const crearProducto = async () => {
     // Actualizar el documento en Firestore con las referencias de imágenes
     await updateDoc(docRef, updateData);
 
-    
     // Crear una notificación global en Firestore
-await addDoc(collection(db, 'notificaciones'), {
-  mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
-  timestamp: new Date().toISOString(),
-  productoId: docRef.id,
-  userId: auth.currentUser?.uid  // Asegúrate de incluir el UID del usuario
-});
-
-
+    await addDoc(collection(db, 'notificaciones'), {
+      mensaje: `Nuevo producto publicado: ${producto.value.nombre}`,
+      timestamp: new Date().toISOString(),
+      productoId: docRef.id,
+      userId: auth.currentUser?.uid
+    });
 
     console.log("Producto creado exitosamente con imágenes:", imagenes);
 
