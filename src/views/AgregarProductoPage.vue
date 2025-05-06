@@ -31,12 +31,12 @@
               interface="action-sheet"
               required
             >
-              <ion-select-option value="carros">Carros</ion-select-option>
-              <ion-select-option value="motos">Motos</ion-select-option>
-              <ion-select-option value="inmobiliaria">Inmobiliaria</ion-select-option>
-              <ion-select-option value="construccion">Construcción</ion-select-option>
-              <ion-select-option value="botes">Botes</ion-select-option>
-              <ion-select-option value="otra">Otra categoría</ion-select-option>
+              <ion-select-option value="Autos y Motos">Autos y Motos</ion-select-option>
+              <ion-select-option value="Ropa">Ropa</ion-select-option>
+              <ion-select-option value="Industrial y Maquinaria">Industrial y Maquinaria</ion-select-option>
+              <ion-select-option value="Inmuebles">Inmuebles</ion-select-option>
+              <ion-select-option value="Hogar y Decoracion">Hogar y Decoracion</ion-select-option>
+              <ion-select-option value="Tecnología">Tecnología</ion-select-option>
             </ion-select>
           </ion-item>
 
