@@ -24,11 +24,11 @@
             </ion-card-title>
             <ion-text>
               <p>Categoría: {{ producto.categoria }}</p>
-              <p>Precio base: {{ producto.precioBase }} COP</p>
-              <p>Venta inmediata: {{ producto.precioVentaInmediata }} COP</p>
-              <p>Desde: {{ producto.fechaApertura }}</p>
-              <p>Hasta: {{ producto.fechaCierre }}</p>
-              <p>Publicado: {{ producto.creadoEn }}</p>
+              <p>Precio base: ${{ formatearPrecio(producto.precioBase) }} COP</p>
+              <p>Venta inmediata: ${{ formatearPrecio(producto.precioVentaInmediata) }} COP</p>
+              <p>Desde: {{ formatearFechaHora(producto.fechaApertura) }}</p>
+              <p>Hasta: {{ formatearFechaHora(producto.fechaCierre) }}</p>
+              <p>Publicado: {{ formatearFechaPublicacion(producto.creadoEn) }}</p>
   
               <!-- Mostrar el estado del producto -->
               <p v-if="producto.estado === 'Vendido'" class="estado-vendido">Estado: Vendido</p>
@@ -82,6 +82,64 @@ import { storage } from '../firebase/FirebaseConfig'; // Importa Firebase Storag
 import { ref as storageRef, deleteObject } from 'firebase/storage'; // Importa las funciones necesarias para manejar Storage
 
 const productos = ref([]);
+
+// Función para formatear precios
+const formatearPrecio = (precio) => {
+  if (!precio && precio !== 0) return 'N/A';
+  return new Intl.NumberFormat('es-CO').format(precio);
+};
+
+// Función para formatear fechas y horas
+const formatearFechaHora = (fechaStr) => {
+  if (!fechaStr) return 'N/A';
+  
+  try {
+    // Crear una fecha a partir del string
+    const fecha = new Date(fechaStr);
+    
+    // Verificar si la fecha es válida
+    if (isNaN(fecha.getTime())) return 'Fecha inválida';
+    
+    // Formatear la fecha: DD/MM/YYYY, HH:MM a.m./p.m.
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    
+    // Formatear la hora en formato 12h con a.m./p.m.
+    let horas = fecha.getHours();
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const periodo = horas >= 12 ? 'p.m.' : 'a.m.';
+    
+    // Convertir a formato 12h
+    horas = horas % 12;
+    horas = horas ? horas : 12; // Si es 0, mostrar como 12
+    
+    return `${dia}/${mes}/${anio}, ${horas}:${minutos} ${periodo}`;
+  } catch (error) {
+    console.error("Error al formatear fecha:", error);
+    return 'Error de formato';
+  }
+};
+
+// Función para formatear la fecha de publicación (menos detallada)
+const formatearFechaPublicacion = (fechaStr) => {
+  if (!fechaStr) return 'N/A';
+  
+  try {
+    const fecha = new Date(fechaStr);
+    
+    if (isNaN(fecha.getTime())) return 'Fecha inválida';
+    
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    
+    return `${dia}/${mes}/${anio}`;
+  } catch (error) {
+    console.error("Error al formatear fecha de publicación:", error);
+    return 'Error de formato';
+  }
+};
 
 const cargarMisProductos = async () => {
   const user = auth.currentUser;
