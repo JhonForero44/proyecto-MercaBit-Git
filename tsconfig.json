@@ -23,7 +23,7 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue"
-  ],
+, "src/firebase/FirebaseConfig.js", "src/services/notification.service.ts"  ],
   "references": [
     { "path": "./tsconfig.node.json" }
   ]
