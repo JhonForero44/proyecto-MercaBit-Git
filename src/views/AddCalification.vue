@@ -1,60 +1,107 @@
 <template>
-  <div>
-    <h1>Califica al Vendedor</h1>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Califica la compra</ion-title>
+      </ion-toolbar>
+    </ion-header>
 
-    <!-- Si la compra está completada, muestra el formulario de calificación -->
-    <div v-if="estadoCompra === 'completado'">
-      <label for="puntaje">Puntaje (1 a 5):</label>
-      <input type="number" id="puntaje" v-model="puntaje" min="1" max="5" />
+    <ion-content class="ion-padding">
+      <div v-if="estadoCompra === 'completado'">
+        <h2>Compra: {{ compraId }}</h2>
 
-      <label for="comentario">Comentario:</label>
-      <textarea id="comentario" v-model="comentario"></textarea>
+        <ion-item>
+          <ion-label position="floating">Puntaje (1 a 5)</ion-label>
+          <ion-input type="number" v-model.number="puntaje" min="1" max="5" />
+        </ion-item>
 
-      <button @click="enviarCalificacion">Enviar Calificación</button>
-    </div>
-    <div v-else>
-      <p>Solo puedes calificar cuando la compra esté completada.</p>
-    </div>
-  </div>
+        <ion-item>
+          <ion-label position="floating">Comentario</ion-label>
+          <ion-textarea v-model="comentario" />
+        </ion-item>
+
+        <ion-button expand="block" @click="enviarCalificacion">
+          Enviar Calificación
+        </ion-button>
+      </div>
+
+      <div v-else>
+        <ion-text color="medium">
+          <p>Solo puedes calificar cuando la compra esté completada.</p>
+        </ion-text>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
-<script>
-import { ref, onMounted } from "vue";
-import { agregarCalificacion } from '../services/firebaseService';  // Importa la función de calificación
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { doc, getDoc } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
+import { db } from '../firebase/FirebaseConfig'
+import { agregarCalificacion } from '../services/CalificationService'
 
-export default {
-  setup() {
-    const puntaje = ref(5);  // Valor predeterminado de calificación
-    const comentario = ref("");  // Comentario de la calificación
-    const estadoCompra = ref("");  // Estado de la compra (completado o pendiente)
-    const compraId = 'id-de-la-compra';  // Esto debe ser dinámico según el usuario
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonTextarea,
+  IonButton,
+  IonText
+} from '@ionic/vue'
 
-    // Obtener el estado de la compra
-    onMounted(async () => {
-      const compraRef = doc(db, 'compras', compraId);  // Obtenemos el documento de la compra
-      const compraSnapshot = await getDoc(compraRef);
+const route = useRoute()
+const compraId = route.params.compraId
 
-      if (compraSnapshot.exists()) {
-        estadoCompra.value = compraSnapshot.data().estado;  // Actualizamos el estado de la compra
-      }
-    });
+const puntaje = ref(5)
+const comentario = ref('')
+const estadoCompra = ref('')
+const vendedorId = ref(null)
 
-    // Función para enviar la calificación
-    const enviarCalificacion = async () => {
-      const vendedorId = 'vendedor123';  // Este valor debe ser dinámico
-      const compradorId = 'comprador456';  // Este valor debe ser dinámico (ID del comprador)
-      
-      await agregarCalificacion(vendedorId, compradorId, puntaje.value, comentario.value);
-    };
+onMounted(async () => {
+  const compraRef = doc(db, 'compras', compraId)
+  const compraSnapshot = await getDoc(compraRef)
 
-    return {
-      puntaje,
-      comentario,
-      estadoCompra,
-      enviarCalificacion
-    };
+  if (compraSnapshot.exists()) {
+    const data = compraSnapshot.data()
+    estadoCompra.value = data.estado
+    vendedorId.value = data.vendedorId
+  }
+})
+
+const enviarCalificacion = async () => {
+  const auth = getAuth()
+  const user = auth.currentUser
+
+  if (!user) {
+    alert('Debes estar autenticado para calificar.')
+    return
+  }
+
+  const compradorId = user.uid
+
+  if (puntaje.value < 1 || puntaje.value > 5) {
+    alert('El puntaje debe estar entre 1 y 5.')
+    return
+  }
+
+  if (!comentario.value.trim()) {
+    alert('Por favor, agrega un comentario.')
+    return
+  }
+
+  try {
+    await agregarCalificacion(vendedorId.value, compradorId, puntaje.value, comentario.value)
+    alert('Calificación enviada correctamente.')
+  } catch (error) {
+    console.error('Error al enviar la calificación:', error)
+    alert('Hubo un problema al enviar la calificación.')
   }
 }
 </script>

@@ -20,6 +20,13 @@ const routes = [
     component: () => import('@/views/RecuperarContraseña.vue'),
   },
   {
+  path: '/add-calification/:compraId', // Uso de un parámetro dinámico
+  name: 'calificacion',
+  component: () => import('@/views/AddCalification.vue'),
+  props: true // Permite que el parámetro sea pasado como prop al componente
+  },
+
+  {
     path: '',
     component: () => import('@/layouts/DefaultLayout.vue'),
     children: [
@@ -75,11 +82,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
-        path: '/Evaluate',
-        name: 'Evaluate',
-        component: () => import('@/views/Evaluate.vue'),
-      },      
-      {
+      
+  path: '/MisCalificaciones', //
+  name: 'calificacion',
+  component: () => import('@/views/MisCalificaciones.vue'),
+      },{
+
         path: '/Miscompras',
         name: 'MisCompras',
         component: () => import('@/views/MisCompras.vue')
@@ -100,18 +108,8 @@ const routes = [
         component: () => import('@/views/ProductosPorCategoria.vue'),
         meta: { requiresAuth: true },
       }
-      /*
-      {
-        path: 'notificaciones',
-        component: () => import('@/views/Notificaciones.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'mis-ventas',
-        component: () => import('@/views/MisVentasPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      ,*/
+   
+      
     ]
   }
 ];
