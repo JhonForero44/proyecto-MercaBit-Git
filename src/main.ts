@@ -55,3 +55,18 @@ router.isReady().then(() => {
 
   app.mount('#app');
 });
+
+import { onAuthStateChanged } from 'firebase/auth';
+// @ts-ignore
+  import { auth } from './firebase/FirebaseConfig';
+  // @ts-ignore
+  import { notificationService } from './services/notification.service'; // ajusta la ruta
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("Usuario autenticado:", user.uid);
+      notificationService.initialize(); // 🔐 Solo después de login
+    } else {
+      console.log("Usuario no autenticado");
+    }
+});

@@ -7,9 +7,6 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const { onRequest } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
-
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
@@ -18,169 +15,283 @@ const logger = require("firebase-functions/logger");
 //   response.send("Hello from Firebase!");
 // });
 // every 24 hours -- * * * * *
-const functions = require('firebase-functions/v1');
-const admin = require('firebase-admin');
-admin.initializeApp();
 
-// Función principal que se ejecuta automáticamente cada minuto
-exports.finalizarSubasta = functions.pubsub.schedule('every 24 hours').onRun(async () => {
-    return await finalizarSubastas();
+import { initializeApp, getApps } from "firebase-admin/app";
+import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from "firebase-admin/messaging";
+import { onRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import logger from "firebase-functions/logger";
+
+// Inicializar Firebase Admin solo si no está inicializado
+if (!getApps().length) initializeApp();
+
+const db = getFirestore();
+
+/**
+ * Función programada (cron) que se ejecuta cada hora en minuto 0
+ * Finaliza las subastas que ya deben cerrarse
+ */
+// Función que se ejecutará cada minuto para actualizar el estado de los productos a 'Finalizada'
+export const actualizarEstadoProductos = onSchedule('0 * * * *', async (event) => {
+  // Obtener la fecha actual
+  const fechaActual = new Date(); // Fecha actual como objeto Date
+
+  // Referencia a la colección de productos
+  const productosRef = db.collection('products');
+
+  // Obtener todos los productos
+  const snapshot = await productosRef.get();
+
+  // Iterar sobre los productos
+  snapshot.forEach(async (docSnapshot) => {
+    const productoId = docSnapshot.id;
+    const productoData = docSnapshot.data();
+
+    // Convertir fechaCierre a un objeto Date (asumiendo que fechaCierre es una cadena de texto)
+    const fechaCierre = new Date(productoData.fechaCierre);
+
+    // Imprimir fecha de cierre para depuración
+    console.log(`Fecha de Cierre para Producto ${productoId}: ${fechaCierre}`);
+
+    // Comparar solo la fecha (sin hora/minuto) - Cambiar el estado si la fecha de cierre ha pasado
+    if (fechaCierre <= fechaActual && productoData.estado === 'Disponible') {
+      // Cambiar el estado del producto a "Finalizada"
+      await docSnapshot.ref.update({ estado: 'Finalizada' });
+      console.log(`Producto ${productoId} actualizado a 'Finalizada'`);
+    }
+  });
 });
 
-// Función HTTP para pruebas manuales
-exports.testFinalizarSubasta = functions.https.onRequest(async (req, res) => {
-    await finalizarSubastas();
-    res.send("Subastas finalizadas manualmente desde testFinalizarSubasta");
+async function actualizarEsMasAlta(productoId) {
+  if (!productoId) {
+    logger.warn("Producto ID no definido para actualizar es_mas_alta");
+    return;
+  }
+
+  const ofertasSnapshot = await db.collection("ofertas")
+    .where("producto_id", "==", productoId)
+    .where("estado", "==", "activa")
+    .get();
+
+  if (ofertasSnapshot.empty) {
+    logger.info(`No hay ofertas activas para producto ${productoId}`);
+    return;
+  }
+
+  let maxCantidad = -Infinity;
+  let ofertaMasAltaDoc = null;
+
+  ofertasSnapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.cantidad > maxCantidad) {
+      maxCantidad = data.cantidad;
+      ofertaMasAltaDoc = doc;
+    }
+  });
+
+  if (!ofertaMasAltaDoc) {
+    logger.info(`No se encontró oferta más alta para producto ${productoId}`);
+    return;
+  }
+
+  const batch = db.batch();
+
+  ofertasSnapshot.docs.forEach(doc => {
+    const esMasAlta = doc.id === ofertaMasAltaDoc.id;
+    batch.update(doc.ref, { es_mas_alta: esMasAlta });
+  });
+
+  await batch.commit();
+  logger.info(`Oferta más alta actualizada para producto ${productoId}: ${ofertaMasAltaDoc.id} con cantidad ${maxCantidad}`);
+}
+
+export const ofertaCreada = onDocumentCreated("ofertas/{ofertaId}", async (event) => {
+  const oferta = event.data?.data();
+  logger.info("Oferta creada evento data:", oferta);
+
+  // Verificar si el producto_id existe
+  if (!oferta || !oferta.producto_id) {
+    logger.warn("Falta producto_id en la oferta creada");
+    return;
+  }
+
+  // Si llega correctamente el producto_id, procesamos
+  await actualizarEsMasAlta(oferta.producto_id);
 });
 
-// Función para finalizar subastas
-async function finalizarSubastas() {
-    try {
-        console.log('Iniciando función de finalización de subastas');
+export const ofertaActualizada = onDocumentUpdated("ofertas/{ofertaId}", async (event) => {
+  const oferta = event.data?.after.data;
+  logger.info("Trigger ofertaActualizada activado con datos:", oferta);
+  if (!oferta || !oferta.producto_id) {
+    logger.warn("Datos incompletos o falta producto_id");
+    return;
+  }
+  await actualizarEsMasAlta(oferta.producto_id);
+});
 
-        const ahora = new Date().toISOString();
-        const subastasRef = admin.firestore().collection('products');
+/**
+ * Función que se ejecuta cuando el producto cambia a 'Finalizado' en la colección 'products'
+ */export const finalizarProductoYActualizarSaldo = onDocumentUpdated("products/{productoId}", async (event) => {
+  logger.info("El trigger finalizarProductoYActualizarSaldo se ha ejecutado.");
 
-        const docTest = await subastasRef.doc('HQNgmeGcnlAZ1O6tUmus').get();
-        console.log("🧪 Documento de prueba:", docTest.exists ? docTest.data() : "No encontrado");
+  // Datos del producto después de la actualización
+  const producto = event.data?.after.data(); 
+  const productoId = event.params.productoId;
 
-        // Obtener el número total de subastas sin condiciones
-        const todasSubastasQuery = await subastasRef.get();
-        if (todasSubastasQuery.empty) {
-            console.log('⚠️ La colección "products" está vacía o no fue encontrada.');
-        } else {
-            console.log('✅ Documentos encontrados en "products":');
-            todasSubastasQuery.forEach(doc => {
-                console.log(`🔎 ID: ${doc.id}`, doc.data());
-            });
-        }
+  // Log para revisar el contenido del producto
+  logger.info("Producto datos:", producto);
 
-        console.log(`Número total de subastas encontradas (sin condiciones): ${todasSubastasQuery.size}`);
+  // Verificar si el estado del producto es "Finalizada"
+  if (producto?.estado !== "Finalizada") {
+    logger.info(`El producto ${productoId} no está finalizado, no se realizará el procesamiento.`);
+    return null;
+  }
 
-        todasSubastasQuery.forEach(doc => {
-            console.log(`Subasta ID: ${doc.id} - Estado: ${doc.data().estado} - FechaCierre: ${doc.data().fechaCierre}`);
-        });
+  // Log para verificar que producto.producto_id no es undefined
+  logger.info("Producto ID:", productoId);
 
-        // Obtener subastas que deben ser finalizadas (con condiciones)
-        const subastasFinalizadasQuery = await subastasRef
-            .where('fechaCierre', '<=', ahora)
-            .where('estado', '==', 'Disponible')
-            .get();
+  // Obtener la oferta más alta relacionada con el producto
+  const ofertaSnapshot = await db.collection('ofertas')
+    .where('producto_id', '==', productoId) // Asegúrate de que producto.producto_id esté definido
+    .where('es_mas_alta', '==', true)
+    .where('estado', '==', 'activa')
+    .get();
 
-        console.log(`Número de subastas encontradas con condiciones: ${subastasFinalizadasQuery.size}`);
-        subastasFinalizadasQuery.forEach(doc => {
-            console.log(`Subasta encontrada: ${doc.id} - Estado: ${doc.data().estado} - FechaCierre: ${doc.data().fechaCierre}`);
-        });
+  if (ofertaSnapshot.empty) {
+    logger.info(`No se encontró oferta activa más alta para el producto ${productoId}`);
+    return null;
+  }
 
-        if (subastasFinalizadasQuery.empty) {
-            console.log('No hay subastas para finalizar');
-            return null;
-        }
+  const oferta = ofertaSnapshot.docs[0].data();
+  const compradorId = oferta.usuario_id;
+  const cantidad = oferta.cantidad;
 
-        const promesas = subastasFinalizadasQuery.docs.map(doc => procesarSubastaFinalizada(doc));
+  // Verificar si compradorId y cantidad están definidos
+  logger.info("Comprador ID:", compradorId);
+  logger.info("Cantidad de la oferta:", cantidad);
 
-        await Promise.all(promesas);
-        console.log('Proceso de finalización de subastas completado');
-        return null;
-    } catch (error) {
-        console.error('Error en finalizarSubasta:', error);
-        return null;
-    }
-}
+  // Obtener los datos del comprador y vendedor
+  const compradorSnapshot = await db.collection('users').doc(compradorId).get();
+  const vendedorSnapshot = await db.collection('users').doc(producto.userId).get();
 
-// Función para procesar subastas finalizadas
-async function procesarSubastaFinalizada(doc) {
-    try {
-        const subasta = doc.data();
-        const subastaId = doc.id;
-        const vendedorId = subasta.vendedor_id;
-        const productoId = subasta.producto_id;
+  // Verificar que el comprador y vendedor existen
+  if (!compradorSnapshot.exists || !vendedorSnapshot.exists) {
+    logger.warn('No se encontraron datos del comprador o vendedor');
+    return null;
+  }
 
-        console.log(`Procesando subasta finalizada: ${subastaId}`);
+  const comprador = compradorSnapshot.data();
+  const vendedor = vendedorSnapshot.data();
 
-        const ofertasRef = admin.firestore().collection('ofertas');
-        const ofertasQuery = await ofertasRef
-            .where('subasta_id', '==', subastaId)
-            .where('estado', '==', 'activa')
-            .orderBy('cantidad', 'desc')
-            .limit(1)
-            .get();
+  // Verificar que comprador.saldo y vendedor.saldo están definidos
+  logger.info("Saldo del comprador:", comprador.saldo);
+  logger.info("Saldo del vendedor:", vendedor.saldo);
 
-        if (!ofertasQuery.empty) {
-            const ofertaGanadora = ofertasQuery.docs[0].data();
-            const cantidadGanadora = ofertaGanadora.cantidad;
-            const usuarioGanadorId = ofertaGanadora.usuario_id;
+  // Verificar que el comprador tenga suficiente saldo
+  if (comprador.saldo < cantidad) {
+    logger.warn('Saldo insuficiente en la cuenta del comprador');
+    return null;
+  }
 
-            console.log(`Oferta ganadora encontrada: ${usuarioGanadorId} con ${cantidadGanadora}`);
+  // Calcular nuevos saldos
+  const nuevoSaldoComprador = comprador.saldo - cantidad;
+  const nuevoSaldoVendedor = vendedor.saldo + cantidad;
 
-            // Actualizar subasta como finalizada
-            await admin.firestore().collection('products').doc(subastaId).update({
-                estado: 'finalizada',
-                usuario_ganador_id: usuarioGanadorId,
-                precio_final: cantidadGanadora,
-                fecha_actualizacion: admin.firestore.FieldValue.serverTimestamp()
-            });
+  // Log para los nuevos saldos
+  logger.info("Nuevo saldo comprador:", nuevoSaldoComprador);
+  logger.info("Nuevo saldo vendedor:", nuevoSaldoVendedor);
 
-            // Actualizar estado del producto en 'products'
-            if (productoId) {
-                await admin.firestore().collection('products').doc(productoId).update({
-                    estado: 'vendido',
-                    fecha_venta: admin.firestore.FieldValue.serverTimestamp()
-                });
-            }
+  // Crear un batch para actualizar los saldos de los usuarios
+  const batch = db.batch();
 
-            // Transacción para actualizar saldos de los usuarios
-            await admin.firestore().runTransaction(async (transaction) => {
-                const usuarioGanadorDoc = await transaction.get(admin.firestore().collection('users').doc(usuarioGanadorId));
-                const vendedorDoc = await transaction.get(admin.firestore().collection('users').doc(vendedorId));
+  // Descontar del saldo del comprador
+  batch.update(db.collection('users').doc(compradorId), { saldo: nuevoSaldoComprador });
 
-                if (!usuarioGanadorDoc.exists || !vendedorDoc.exists) {
-                    throw new Error('Usuario ganador o vendedor no encontrado');
-                }
+  // Aumentar el saldo del vendedor
+  batch.update(db.collection('users').doc(producto.userId), { saldo: nuevoSaldoVendedor });
 
-                const usuarioGanador = usuarioGanadorDoc.data();
-                const vendedor = vendedorDoc.data();
+  // Cambiar el estado de la oferta a "finalizada"
+  batch.update(ofertaSnapshot.docs[0].ref, { estado: 'finalizada' });
 
-                if (usuarioGanador.saldo < cantidadGanadora) {
-                    throw new Error(`Saldo insuficiente para el usuario ${usuarioGanadorId}`);
-                }
+  try {
+    // Ejecutar el batch
+    await batch.commit();
+    logger.info(`Saldo actualizado para comprador ${compradorId} y vendedor ${producto.userId}`);
+  } catch (error) {
+    logger.error("Error al ejecutar el batch:", error);
+    return null;
+  }
 
-                transaction.update(admin.firestore().collection('users').doc(usuarioGanadorId), {
-                    saldo: usuarioGanador.saldo - cantidadGanadora
-                });
+  return null;
+});
 
-                transaction.update(admin.firestore().collection('users').doc(vendedorId), {
-                    saldo: vendedor.saldo + cantidadGanadora
-                });
+// --- Funciones v2 ---
+/* Función HTTP simple para probar que funciona */
+export const helloWorldV2 = onRequest((req, res) => {
+  res.send("¡Hola desde Firebase Functions v2 modular!");
+});
 
-                return {
-                    comprador_id: usuarioGanadorId,
-                    vendedor_id: vendedorId,
-                    subasta_id: subastaId,
-                    monto_total: cantidadGanadora
-                };
-            }).then(async (datosTransaccion) => {
-                await admin.firestore().collection('transacciones').add({
-                    ...datosTransaccion,
-                    fecha_pago: admin.firestore.FieldValue.serverTimestamp()
-                });
-                console.log(`Transacción registrada para la subasta ${subastaId}`);
-            });
+/**
+ * Trigger cuando se crea una nueva subasta
+ */
+export const nuevaSubastaV2 = onDocumentCreated("subastas/{subastaId}", async (event) => {
+  if (!event.data || !event.data.exists) {
+    logger.info("No se encontraron datos en el evento nuevaSubastaV2");
+    return null;
+  }
+  const nuevaSubasta = event.data.data();
+  const subastaId = event.params.subastaId;
 
-        } else {
-            await admin.firestore().collection('products').doc(subastaId).update({
-                estado: 'finalizada',
-                fecha_actualizacion: admin.firestore.FieldValue.serverTimestamp()
-            });
-            console.log(`Subasta ${subastaId} finalizada sin ofertas`);
-        }
+  logger.info(`Nueva subasta creada: ${subastaId}`, nuevaSubasta);
 
-    } catch (error) {
-        console.error(`Error procesando subasta ${doc.id}:`, error);
-        await admin.firestore().collection('products').doc(doc.id).update({
-            estado: 'error',
-            error_mensaje: error.message,
-            fecha_error: admin.firestore.FieldValue.serverTimestamp()
-        });
-    }
-}
+  try {
+    const mensaje = {
+      notification: {
+        title: '¡Nueva subasta disponible!',
+        body: `${nuevaSubasta.titulo} ha sido publicada. Precio inicial: ${nuevaSubasta.precioInicial}`
+      },
+      topic: 'nuevas-subastas'
+    };
+
+    await getMessaging().send(mensaje);
+    logger.info('Notificación enviada para la nueva subasta');
+    return { success: true };
+  } catch (error) {
+    logger.error('Error al enviar notificación nuevaSubastaV2:', error);
+    return { error: error.message };
+  }
+});
+
+/**
+ * Trigger cuando se actualiza una subasta
+ */
+export const actualizacionSubastaV2 = onDocumentUpdated("subastas/{subastaId}", async (event) => {
+  if (!event.data) {
+    logger.info("No se encontraron datos en el evento actualizacionSubastaV2");
+    return null;
+  }
+  const antes = event.data.before.data();
+  const despues = event.data.after.data();
+  const subastaId = event.params.subastaId;
+
+  logger.info(`Subasta actualizada: ${subastaId}`, { antes, despues });
+
+  const mensaje = {
+    notification: {
+      title: '¡Una subasta ha sido actualizada!',
+      body: `${despues.titulo} ahora tiene un nuevo precio.`
+    },
+    topic: 'nuevas-subastas'
+  };
+
+  try {
+    await getMessaging().send(mensaje);
+    logger.info('Notificación enviada para actualización de subasta');
+    return { success: true, message: 'Actualización procesada' };
+  } catch (error) {
+    logger.error('Error al enviar notificación actualizacionSubastaV2:', error);
+    return { error: error.message };
+  }
+});

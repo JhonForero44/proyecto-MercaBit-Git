@@ -9,6 +9,7 @@
     </ion-header>
 
     <ion-content class="ion-padding content-bg">
+      <!-- Sección del perfil del usuario -->
       <div class="profile-section">
         <div class="profile-image-container" @click="seleccionarImagen">
           <img class="profile-image" :src="foto" alt="Foto de perfil" />
@@ -16,13 +17,7 @@
             <ion-icon :icon="camera" class="camera-icon" />
           </div>
           <!-- Input oculto para seleccionar archivos -->
-          <input
-            type="file"
-            ref="fileInput"
-            accept="image/*"
-            style="display: none"
-            @change="procesarImagen"
-          />
+          <input type="file" ref="fileInput" accept="image/*" style="display: none" @change="procesarImagen" />
         </div>
 
         <div class="form-card">
@@ -45,24 +40,28 @@
             <ion-label class="label-text" position="stacked">Saldo:</ion-label>
             <ion-input v-model="saldo" placeholder="Tu Saldo" readonly></ion-input>
           </ion-item>
+
+          <!-- Sección de calificaciones del vendedor -->
+          <ion-item lines="none" class="form-item">
+            <ion-label class="label-text" position="stacked">Calificaciones:</ion-label>
+            <div style="width: 100%;">
+              <p>Promedio de Calificación: {{ promedio }}</p>
+              <div v-for="(calificacion, index) in calificaciones" :key="index" style="margin-top: 5px;">
+                <vue-star-rating :rating="calificacion.puntaje" :star-size="20" :read-only="true" />
+                <p>{{ calificacion.comentario }}</p>
+              </div>
+            </div>
+          </ion-item>
+
         </div>
       </div>
 
       <!-- Toast para mostrar mensajes -->
-      <ion-toast
-        :is-open="mostrarToast"
-        :message="mensajeToast"
-        :duration="3000"
-        :color="colorToast"
-        @didDismiss="mostrarToast = false"
-      ></ion-toast>
+      <ion-toast :is-open="mostrarToast" :message="mensajeToast" :duration="3000" :color="colorToast"
+        @didDismiss="mostrarToast = false"></ion-toast>
 
       <!-- Loading mientras se carga la imagen -->
-      <ion-loading
-        :is-open="cargando"
-        message="Subiendo imagen..."
-        :duration="0"
-      ></ion-loading>
+      <ion-loading :is-open="cargando" message="Subiendo imagen..." :duration="0"></ion-loading>
     </ion-content>
   </ion-page>
 </template>
@@ -84,17 +83,17 @@ import {
 } from '@ionic/vue';
 import { camera } from 'ionicons/icons';
 import { ref, onMounted } from 'vue';
-import { auth, db } from '@/firebase/FirebaseConfig'; // ajusta si tienes otro path
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { 
-  getStorage, 
-  ref as storageRef, 
-  uploadBytes, 
-  getDownloadURL, 
-  deleteObject 
+import { auth, db } from '@/firebase/FirebaseConfig';
+import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
 } from 'firebase/storage';
+import VueStarRating from 'vue-star-rating';
 
-// Referencias reactivas
 const nombre = ref('');
 const cc = ref('');
 const correo = ref('');
@@ -106,9 +105,11 @@ const mostrarToast = ref(false);
 const mensajeToast = ref('');
 const colorToast = ref('success');
 const userId = ref('');
-const fotoActualURL = ref(''); // Para guardar la URL actual y luego eliminarla
+const fotoActualURL = ref('');
 
-// Cargar info del usuario desde Firestore
+const calificaciones = ref([]);
+const promedio = ref(0);
+
 onMounted(async () => {
   const user = auth.currentUser;
   if (user) {
@@ -122,37 +123,36 @@ onMounted(async () => {
       cc.value = data.cedula || '';
       correo.value = data.email || '';
       foto.value = data.photoURL || 'https://via.placeholder.com/100';
-      fotoActualURL.value = data.photoURL || ''; // Guardamos la URL actual
+      fotoActualURL.value = data.photoURL || '';
       saldo.value = data.saldo;
     } else {
-      console.log('No existe el documento del usuario');
       mostrarMensaje('No se encontró información del usuario', 'danger');
     }
+
+    const calificacionesRef = collection(db, 'usuarios', user.uid, 'calificaciones');
+    const querySnapshot = await getDocs(calificacionesRef);
+
+    calificaciones.value = querySnapshot.docs.map(doc => doc.data());
+    const total = calificaciones.value.reduce((sum, calificacion) => sum + calificacion.puntaje, 0);
+    promedio.value = calificaciones.value.length ? total / calificaciones.value.length : 0;
   } else {
-    console.log('No hay usuario autenticado');
     mostrarMensaje('No hay sesión iniciada', 'danger');
   }
 });
 
-// Función para abrir el selector de imágenes
 const seleccionarImagen = () => {
-  if (fileInput.value) {
-    fileInput.value.click();
-  }
+  if (fileInput.value) fileInput.value.click();
 };
 
-// Función para procesar la imagen seleccionada
 const procesarImagen = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Validar que sea una imagen
   if (!file.type.match('image.*')) {
     mostrarMensaje('Por favor selecciona una imagen válida', 'danger');
     return;
   }
 
-  // Validar tamaño (máximo 2MB)
   if (file.size > 2 * 1024 * 1024) {
     mostrarMensaje('La imagen no debe superar los 2MB', 'danger');
     return;
@@ -162,37 +162,26 @@ const procesarImagen = async (event) => {
     cargando.value = true;
     await subirImagen(file);
   } catch (error) {
-    console.error('Error al procesar la imagen:', error);
     mostrarMensaje('Error al procesar la imagen', 'danger');
   } finally {
     cargando.value = false;
   }
 };
 
-// Función para eliminar la foto anterior
 const eliminarFotoAnterior = async (url) => {
-  if (!url || url === 'https://via.placeholder.com/100' || !url.includes('firebasestorage')) {
-    return; // No eliminar si es la imagen por defecto o no es de Firebase Storage
-  }
+  if (!url || url === 'https://via.placeholder.com/100' || !url.includes('firebasestorage')) return;
 
   try {
     const storage = getStorage();
-    
-    // Extraer la ruta del archivo desde la URL
-    // La URL tiene un formato como: https://firebasestorage.googleapis.com/v0/b/[proyecto]/o/fotoPerfil%2F[userId]%2F[nombre]?alt=media&token=[token]
     const urlObj = new URL(url);
     const path = decodeURIComponent(urlObj.pathname.split('/o/')[1].split('?')[0]);
-    
     const fileRef = storageRef(storage, path);
     await deleteObject(fileRef);
-    console.log('Foto anterior eliminada correctamente');
   } catch (error) {
     console.error('Error al eliminar la foto anterior:', error);
-    // No mostramos mensaje de error al usuario para no confundirlo si falla la eliminación
   }
 };
 
-// Función para subir la imagen a Firebase Storage
 const subirImagen = async (file) => {
   if (!userId.value) {
     mostrarMensaje('No se puede identificar al usuario', 'danger');
@@ -202,63 +191,42 @@ const subirImagen = async (file) => {
   const storage = getStorage();
   const extension = file.name.split('.').pop();
   const nombreArchivo = `perfil_${Date.now()}.${extension}`;
-  // Usamos la misma estructura que para productos: /{carpeta}/{userId}/{fileName}
   const imageRef = storageRef(storage, `fotoPerfil/${userId.value}/${nombreArchivo}`);
 
   try {
-    // Guardar la URL actual para eliminarla después
     const urlAnterior = fotoActualURL.value;
-    
-    // Subir imagen a Firebase Storage
     const snapshot = await uploadBytes(imageRef, file);
-    
-    // Obtener URL de descarga
     const downloadURL = await getDownloadURL(snapshot.ref);
-    
-    // Actualizar URL en Firestore
     await actualizarPerfilUsuario(downloadURL);
-    
-    // Actualizar imagen en la vista
     foto.value = downloadURL;
     fotoActualURL.value = downloadURL;
-    
-    // Eliminar la foto anterior si existe y es de Firebase
-    if (urlAnterior) {
-      await eliminarFotoAnterior(urlAnterior);
-    }
-    
+    if (urlAnterior) await eliminarFotoAnterior(urlAnterior);
     mostrarMensaje('Imagen actualizada correctamente', 'success');
   } catch (error) {
-    console.error('Error al subir la imagen:', error);
     mostrarMensaje('Error al subir la imagen', 'danger');
     throw error;
   }
 };
 
-// Función para actualizar el perfil del usuario en Firestore
 const actualizarPerfilUsuario = async (photoURL) => {
   try {
     const userDocRef = doc(db, 'users', userId.value);
-    await updateDoc(userDocRef, {
-      photoURL: photoURL
-    });
+    await updateDoc(userDocRef, { photoURL });
   } catch (error) {
-    console.error('Error al actualizar el perfil:', error);
     mostrarMensaje('Error al actualizar el perfil', 'danger');
     throw error;
   }
 };
 
-// Función para mostrar mensajes Toast
 const mostrarMensaje = (mensaje, color = 'success') => {
   mensajeToast.value = mensaje;
   colorToast.value = color;
   mostrarToast.value = true;
 };
+
 </script>
 
 <style scoped>
-
 .content-bg {
   background-color: #d9d9d9;
   display: flex;
@@ -270,7 +238,7 @@ const mostrarMensaje = (mensaje, color = 'success') => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 1rem;  
+  margin-top: 1rem;
 }
 
 .profile-image-container {
@@ -331,5 +299,4 @@ const mostrarMensaje = (mensaje, color = 'success') => {
 .label-text {
   font-size: 25px;
 }
-
 </style>

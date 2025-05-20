@@ -15,9 +15,9 @@
             <ion-icon :icon="notificationsOutline" slot-v="start" />
             <ion-label>Notificaciones</ion-label>
           </ion-item>
-          <ion-item router-link="/Evaluate" router-direction="root">
+          <ion-item router-link="/MisCalificaciones" router-direction="root">
             <ion-icon :icon="clipboardOutline" slot-v="start" />
-            <ion-label>Evaluacion</ion-label>
+            <ion-label>Mis calificaciones</ion-label>
           </ion-item>
           <ion-item router-link="/MisCompras" router-direction="root">
             <ion-icon :icon="cartOutline" slot-v="start" />
