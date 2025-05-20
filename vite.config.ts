@@ -23,7 +23,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        serviceWorker: path.resolve(__dirname, 'src/firebase-messaging-sw.js'),  // Asegúrate de incluir tu SW aquí
+        // serviceWorker: path.resolve(__dirname, 'src/firebase-messaging-sw.js'),  // Asegúrate de incluir tu SW aquí
       },
     },
   },
