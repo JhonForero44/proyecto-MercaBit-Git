@@ -152,10 +152,17 @@ const cargarMisProductos = async () => {
     );
 
     const querySnapshot = await getDocs(q);
-    productos.value = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    productos.value = querySnapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .sort((a, b) => {
+        // Orden descendente: productos más recientes primero
+        if (a.creadoEn > b.creadoEn) return 1;
+        if (a.creadoEn < b.creadoEn) return -1;
+        return 0;
+      });
   } catch (error) {
     console.error("Error al cargar productos:", error);
   }
